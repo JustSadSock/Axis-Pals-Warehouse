@@ -1,0 +1,14 @@
+{
+  "name": "axis-pals-warehouse",
+  "version": "1.0.0",
+  "description": "Cooperative browser puzzle Axis Pals: Warehouse",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.17.0"
+  }
+}

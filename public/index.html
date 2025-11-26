@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axis Pals: Warehouse</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div id="start-screen" class="start-screen">
+      <div class="start-card">
+        <p class="eyebrow">кооперативный пазл</p>
+        <h1>Axis Pals: Warehouse</h1>
+        <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
+        <div class="cta-row">
+          <button id="local-play" class="primary large">Играть локально (одна клавиатура)</button>
+          <button id="online-play" class="secondary large">Играть онлайн</button>
+          <button id="endless-play" class="ghost large">Бесконечный режим</button>
+        </div>
+        <div class="controls-note">
+          <div>Игрок 1: W / S (управляет вертикалью для обоих).</div>
+          <div>Игрок 2: ← / → (управляет горизонталью для обоих).</div>
+          <div>Цели по цветам: каждый должен встать на свой маркер.</div>
+          <div>Если одному мешает стена, второй продолжает идти.</div>
+        </div>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">кооперативный склад</p>
+        <h2 class="hero-title">Axis Pals: Warehouse</h2>
+        <p class="lede">Координируйте оси: горизонтальный и вертикальный пал движутся одновременно, чтобы занять свои цветные цели.</p>
+      </div>
+      <div class="status-pill" id="connection-status">Выберите режим</div>
+    </header>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-item player1">Игрок 1 (W/S): ведёт вертикаль</div>
+      <div class="hud-item player2">Игрок 2 (← →): ведёт горизонталь</div>
+      <div class="hud-item" id="level-counter">Уровень 1 / 5</div>
+      <div class="hud-item" id="move-limit">Лимит ходов: —</div>
+    </div>
+
+    <main class="layout">
+      <section class="control-panel" id="local-panel">
+        <div class="panel-heading">
+          <h3 id="level-title">Локальный режим</h3>
+          <div class="hint">Один ходит влево/вправо, другой — вверх/вниз. Объекты смещаются вместе.</div>
+        </div>
+        <div class="controls">
+          <button id="restart-level" class="ghost">Перезапуск уровня (R)</button>
+          <div class="difficulty">
+            <span>Сложность хода:</span>
+            <div class="chip-row">
+              <button class="chip active" data-difficulty="easy">Easy (топ-20)</button>
+              <button class="chip" data-difficulty="medium">Medium (топ-5)</button>
+              <button class="chip" data-difficulty="hard">Hard (топ-2)</button>
+            </div>
+          </div>
+        </div>
+        <div class="level-list" id="level-list"></div>
+      </section>
+
+      <section class="control-panel hidden" id="online-panel">
+        <div class="panel-heading">
+          <h3>Онлайн режим</h3>
+          <p class="hint">Создайте комнату или введите ID. В онлайн-режиме сервер хранит истину, клиенты отправляют только ввод.</p>
+        </div>
+        <div class="online-actions">
+          <div class="card">
+            <button id="create-room" class="primary">Создать комнату</button>
+            <div class="small">Вы станете Игроком 1</div>
+          </div>
+          <div class="card">
+            <label for="room-id-input">Room ID</label>
+            <div class="join-row">
+              <input id="room-id-input" maxlength="6" placeholder="ABCDE">
+              <button id="join-room" class="secondary">Подключиться</button>
+            </div>
+          </div>
+        </div>
+        <div class="online-status" id="online-status">Не подключено</div>
+      </section>
+
+      <section class="game-area">
+        <div class="floating-ui">
+          <div class="pill" id="floating-level">Уровень</div>
+          <div class="pill" id="floating-controls">Игрок 1: W/S · Игрок 2: ← →</div>
+          <div class="pill" id="floating-difficulty">Easy — лимит: —</div>
+        </div>
+        <canvas id="game-canvas" width="640" height="640"></canvas>
+        <div class="caption" id="mode-caption"></div>
+        <div class="restart-hint hidden" id="restart-hint">R — перезапуск уровня</div>
+      </section>
+    </main>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <h3 id="overlay-title"></h3>
+      <p id="overlay-text"></p>
+      <div class="overlay-actions">
+        <button id="overlay-secondary" class="ghost hidden"></button>
+        <button id="overlay-button" class="primary">Продолжить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
