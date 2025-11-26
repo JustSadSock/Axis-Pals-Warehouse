@@ -11,160 +11,109 @@
     <div id="start-screen" class="start-screen">
       <div class="start-gradient"></div>
       <div class="start-card">
-        <div class="start-head">
-          <div>
-            <div class="logo-lockup">
-              <div class="logo-mark">AP</div>
-              <div>
-                <p class="eyebrow">кооперативный пазл</p>
-                <h1>Axis Pals: Warehouse</h1>
-              </div>
-            </div>
-            <p class="lede">Два квадратика движутся синхронно: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
-            <div class="meta-row">
-              <span class="badge">Steam-like build</span>
-              <span class="badge ghost">v0.9.0 pre-release</span>
-              <span class="badge success">Co-op ready</span>
+        <div class="start-top">
+          <div class="logo-lockup">
+            <div class="logo-mark">AP</div>
+            <div>
+              <p class="eyebrow">кооперативный пазл</p>
+              <h1>Axis Pals: Warehouse</h1>
+              <p class="lede">Два пал-персонажа двигаются одновременно. Выберите режим и играйте вдвоём с клавишами или свайпами.</p>
             </div>
           </div>
           <div class="header-actions">
-            <button id="resume-game" class="ghost">Продолжить игру</button>
-            <button id="close-menu" class="ghost subtle">Закрыть меню</button>
+            <button id="resume-game" class="primary ghost">Продолжить</button>
+            <button id="close-menu" class="ghost subtle">Закрыть</button>
           </div>
         </div>
 
-        <div class="start-layout">
-          <div class="start-pane">
-            <div class="hero-pane">
+        <div class="mode-stack">
+          <div class="mode-card soft">
+            <div>
+              <p class="eyebrow">кампания</p>
+              <h3>Локально вдвоём</h3>
+              <p class="hint">Один ведёт горизонталь, второй вертикаль. Уровни и сложность выбираются прямо в игре.</p>
+            </div>
+            <button id="local-play" class="primary large">Начать кампанию</button>
+          </div>
+          <div class="mode-card soft">
+            <div>
+              <p class="eyebrow">рост сложности</p>
+              <h3>Бесконечный забег</h3>
+              <p class="hint">Волны генерируются сами. Играйте без списка уровней — просто жмите старт.</p>
+            </div>
+            <button id="endless-play" class="secondary large">Бесконечный режим</button>
+          </div>
+          <div class="mode-card soft">
+            <div>
+              <p class="eyebrow">дистанционно</p>
+              <h3>Онлайн</h3>
+              <p class="hint">Создайте комнату или введите Room ID. Управление остаётся тем же.</p>
+            </div>
+            <button id="online-play" class="ghost large">Играть онлайн</button>
+          </div>
+        </div>
+
+        <div class="quick-pills">
+          <span class="pill muted">Совместное управление осями</span>
+          <span class="pill muted">Экранные кнопки для телефона</span>
+          <span class="pill muted">Сохраняемые настройки</span>
+        </div>
+
+        <details class="accordion">
+          <summary>Настройки</summary>
+          <div class="accordion-body settings-list">
+            <div class="setting-row">
               <div>
-                <p class="eyebrow">режимы</p>
-                <h3>Выбор режима — как в полноценном клиенте</h3>
-                <p class="hint">Карточки с мини-описанием и мгновенным стартом. Поддержка клавиатуры, геймпада и сенсора.</p>
+                <div class="setting-title">Звуки шагов и побед</div>
+                <p class="hint">Короткие сигналы подтверждают действие.</p>
               </div>
-              <ul class="feature-list">
-                <li>Синхронный кооператив: горизонталь + вертикаль.</li>
-                <li>Переключение кампании и бесконечной волны на лету.</li>
-                <li>Экранный HUD, подсказки и настройки с сохранением.</li>
-              </ul>
+              <label class="switch">
+                <input id="toggle-sound" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
             </div>
-
-            <div class="mode-rail">
-              <div class="mode-card">
-                <div>
-                  <p class="eyebrow">кампания</p>
-                  <h3>Локально</h3>
-                  <p class="hint">Одна клавиатура или экран. Выбирайте уровни и сложность.</p>
-                </div>
-                <button id="local-play" class="primary large">Играть локально</button>
+            <div class="setting-row">
+              <div>
+                <div class="setting-title">Тряска при ошибке</div>
+                <p class="hint">Дрожание подчёркивает заблокированный ход.</p>
               </div>
-              <div class="mode-card">
-                <div>
-                  <p class="eyebrow">рост сложности</p>
-                  <h3>Бесконечно</h3>
-                  <p class="hint">Процедурные уровни. Волны становятся шире и плотнее.</p>
-                </div>
-                <button id="endless-play" class="secondary large">Бесконечный режим</button>
-              </div>
-              <div class="mode-card">
-                <div>
-                  <p class="eyebrow">дистанционно</p>
-                  <h3>Онлайн</h3>
-                  <p class="hint">Создайте комнату или подключитесь по ID. Управление сохраняется.</p>
-                </div>
-                <button id="online-play" class="ghost large">Играть онлайн</button>
-              </div>
+              <label class="switch">
+                <input id="toggle-shake" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
             </div>
-
-            <div class="info-grid">
-              <div class="info-card">
-                <h4>Как играть</h4>
-                <p class="hint">Игрок 1: W / S (вертикаль) или свайп вверх/вниз. Игрок 2: ← / → или стрелки внизу. Если одного держит стенка, второй идёт.</p>
+            <div class="setting-row">
+              <div>
+                <div class="setting-title">Подсказки</div>
+                <p class="hint">Скрыть плавающие подсказки и обучающие подписи.</p>
               </div>
-              <div class="info-card">
-                <h4>Режимы</h4>
-                <ul>
-                  <li>Кампания — выбирайте уровни.</li>
-                  <li>Бесконечно — волны генерируются.</li>
-                  <li>Онлайн — соединение по Room ID.</li>
-                </ul>
-              </div>
-              <div class="info-card">
-                <h4>Советы</h4>
-                <ul>
-                  <li>Меняйте сложность, чтобы подбирать лимит ходов.</li>
-                  <li>Используйте стрелки на экране на телефоне.</li>
-                  <li>Перезапуск — клавиша R или кнопка в панели.</li>
-                </ul>
-              </div>
+              <label class="switch">
+                <input id="toggle-hints" type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
             </div>
           </div>
+        </details>
 
-          <div class="start-pane start-pane--side">
-            <div class="settings-card">
-              <div class="menu-title-row">
-                <div>
-                  <p class="eyebrow">настройки</p>
-                  <h3>Комфорт и визуал</h3>
-                </div>
-                <div class="menu-helper">Сохраняются для всех режимов</div>
-              </div>
-              <div class="settings-list">
-                <div class="setting-row">
-                  <div>
-                    <div class="setting-title">Звуки шагов и побед</div>
-                    <p class="hint">Короткие звуки подтверждают ход, помогают на телефоне.</p>
-                  </div>
-                  <label class="switch">
-                    <input id="toggle-sound" type="checkbox" checked>
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="setting-row">
-                  <div>
-                    <div class="setting-title">Тряска при ошибке</div>
-                    <p class="hint">Дрожание экрана подчёркивает заблокированный ход.</p>
-                  </div>
-                  <label class="switch">
-                    <input id="toggle-shake" type="checkbox" checked>
-                    <span class="slider"></span>
-                  </label>
-                </div>
-                <div class="setting-row">
-                  <div>
-                    <div class="setting-title">Подсказки и UI</div>
-                    <p class="hint">Отключайте всплывающие подсказки и плавающие подписи, если они мешают.</p>
-                  </div>
-                  <label class="switch">
-                    <input id="toggle-hints" type="checkbox" checked>
-                    <span class="slider"></span>
-                  </label>
-                </div>
-              </div>
+        <details class="accordion">
+          <summary>Управление и советы</summary>
+          <div class="accordion-body info-list">
+            <div>
+              <strong>Управление:</strong> Игрок 1 — W / S или свайп вверх/вниз. Игрок 2 — ← / → или экранные стрелки.
             </div>
-            <div class="menu-group">
-              <div class="menu-title-row">
-                <div>
-                  <p class="eyebrow">обновления</p>
-                  <h3>Последние изменения</h3>
-                </div>
-              </div>
-              <div class="changelog">
-                <div>• Главное меню напоминает полноценный лаунчер со статусами и режимами.</div>
-                <div>• Слайдер качества ходов показывает, насколько вы близко к лучшему решению.</div>
-                <div>• Настройки сохраняются и работают во всех режимах.</div>
-              </div>
-            </div>
-            <div class="menu-group ghost-panel">
-              <div class="menu-title-row">
-                <div>
-                  <p class="eyebrow">подсказка</p>
-                  <h3>Играть лучше</h3>
-                </div>
-              </div>
-              <p class="hint">Отрабатывайте первые 5 ходов, пока не попадёте в зону «отлично». Переключайтесь на Medium/Hard, чтобы бросить вызов рекордам.</p>
-            </div>
+            <div>Если одному мешает стенка, второй продолжает движение.</div>
+            <div>R — перезапуск уровня. Сложность влияет на лимит ходов.</div>
           </div>
-        </div>
+        </details>
+
+        <details class="accordion">
+          <summary>Что нового</summary>
+          <div class="accordion-body info-list">
+            <div>— Главное меню стало компактнее и дружелюбнее для телефона.</div>
+            <div>— Режимы вынесены в крупные кнопки, остальное спрятано в панели.</div>
+            <div>— Цвета стали мягче, а панели — чище и легче.</div>
+          </div>
+        </details>
       </div>
     </div>
 
