@@ -39,10 +39,10 @@ function applyPlayerMove(state, controllingPlayer, direction) {
   const isHorizontal = direction === 'left' || direction === 'right';
   const isVertical = direction === 'up' || direction === 'down';
 
-  if (controllingPlayer === 1 && isVertical) {
+  if (controllingPlayer === 1 && isHorizontal) {
     return { state, moved: false, reason: 'axis_blocked' };
   }
-  if (controllingPlayer === 2 && isHorizontal) {
+  if (controllingPlayer === 2 && isVertical) {
     return { state, moved: false, reason: 'axis_blocked' };
   }
 

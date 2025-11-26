@@ -37,6 +37,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayText = document.getElementById('overlay-text');
 const overlayButton = document.getElementById('overlay-button');
+const overlaySecondary = document.getElementById('overlay-secondary');
 const toast = document.getElementById('toast');
 const onlineStatus = document.getElementById('online-status');
 const levelList = document.getElementById('level-list');
@@ -289,10 +290,22 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove('visible'), 1500);
 }
 
-function showOverlay(title, text, buttonLabel = 'Продолжить', onClose = null) {
+function showOverlay(title, text, options = {}) {
+  const { buttonLabel = 'Продолжить', onClose = null, secondaryLabel = null, onSecondary = null } = options;
   overlayTitle.textContent = title;
   overlayText.innerHTML = text;
   overlayButton.textContent = buttonLabel;
+  if (secondaryLabel) {
+    overlaySecondary.textContent = secondaryLabel;
+    overlaySecondary.classList.remove('hidden');
+    overlaySecondary.onclick = () => {
+      overlay.classList.remove('visible');
+      overlay.classList.add('hidden');
+      if (onSecondary) onSecondary();
+    };
+  } else {
+    overlaySecondary.classList.add('hidden');
+  }
   overlay.classList.remove('hidden');
   overlay.classList.add('visible');
   overlayButton.onclick = () => {
@@ -332,11 +345,9 @@ function startLocalGame() {
   resetLocal();
   if (!introShown) {
     introShown = true;
-    showOverlay(
-      'Вместе за клавиатурой',
-      'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — управляет влево/вправо (WASD или ← →).<br>Игрок 2 — управляет вверх/вниз (стрелки или W/S).<br>Каждая команда двигает оба квадратика. Если одному мешает стена, второй продолжает идти. Совместите каждого со своей цветной целью.',
-      'Понятно',
-    );
+    showOverlay('Вместе за клавиатурой', 'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — только W/S (двигает обоих по вертикали).<br>Игрок 2 — только стрелки ← → (двигает обоих по горизонтали).<br>Каждая команда двигает оба квадратика. Если одному мешает стена, второй продолжает идти. Совместите каждого со своей цветной целью.', {
+      buttonLabel: 'Понятно',
+    });
   }
 }
 
@@ -390,29 +401,42 @@ function startEndless() {
 function handleLevelCompletion() {
   levelWon = true;
   sounds.win();
+  const stats = getLevelStats(getActiveLevel());
+  const limits = stats?.moveLimits || {};
+  const summary = `Вы сделали ${movesUsed} ходов.<br>Лимиты: Easy ≤ ${limits.easy ?? '∞'}, Medium ≤ ${limits.medium ?? '∞'}, Hard ≤ ${limits.hard ?? '∞'}.`;
   if (mode === 'endless') {
-    showOverlay('Уровень пройден', 'Дальше чуть сложнее. Готовы?', 'Дальше', () => {
-      endlessStep += 1;
-      endlessDifficulty = {
-        width: Math.min(14, endlessDifficulty.width + (endlessStep % 2 === 0 ? 1 : 0)),
-        height: Math.min(12, endlessDifficulty.height + (endlessStep % 3 === 0 ? 1 : 0)),
-        goalCount: 2,
-        wallDensity: Math.min(0.18, endlessDifficulty.wallDensity + 0.01),
-      };
-      generateNextEndlessLevel();
-      resetLocal();
+    showOverlay('Уровень пройден', `${summary}<br>Следующая волна будет сложнее.`, {
+      buttonLabel: 'Дальше',
+      onClose: () => {
+        endlessStep += 1;
+        endlessDifficulty = {
+          width: Math.min(14, endlessDifficulty.width + (endlessStep % 2 === 0 ? 1 : 0)),
+          height: Math.min(12, endlessDifficulty.height + (endlessStep % 3 === 0 ? 1 : 0)),
+          goalCount: 2,
+          wallDensity: Math.min(0.18, endlessDifficulty.wallDensity + 0.01),
+        };
+        generateNextEndlessLevel();
+        resetLocal();
+      },
+      secondaryLabel: 'Заново',
+      onSecondary: () => resetLocal(),
     });
   } else {
-    showOverlay('Уровень пройден', 'Отличная координация! Готовы к следующему?', 'Следующий уровень', () => {
-      currentLevelIndex = (currentLevelIndex + 1) % levels.length;
-      resetLocal();
+    showOverlay('Уровень пройден', `${summary}<br>Выберите сложность и попробуйте улучшить результат.`, {
+      buttonLabel: 'Следующий уровень',
+      onClose: () => {
+        currentLevelIndex = (currentLevelIndex + 1) % levels.length;
+        resetLocal();
+      },
+      secondaryLabel: 'Заново',
+      onSecondary: () => resetLocal(),
     });
   }
 }
 
 function handleLocalMove(direction, controllingPlayerHint = null) {
   if (!currentState || animation || levelWon) return;
-  const controllingPlayer = controllingPlayerHint || (direction === 'left' || direction === 'right' ? 1 : 2);
+  const controllingPlayer = controllingPlayerHint || (direction === 'left' || direction === 'right' ? 2 : 1);
   const before = currentState;
   const { state: next, moved, reason } = applyPlayerMove(before, controllingPlayer, direction);
 
@@ -420,8 +444,8 @@ function handleLocalMove(direction, controllingPlayerHint = null) {
     shake = 3;
     sounds.deny();
     if (reason === 'axis_blocked') {
-      if (controllingPlayer === 1) showToast('Игрок 1 отвечает только за влево/вправо');
-      if (controllingPlayer === 2) showToast('Игрок 2 отвечает только за вверх/вниз');
+      if (controllingPlayer === 1) showToast('Игрок 1 отвечает только за вертикаль (W/S)');
+      if (controllingPlayer === 2) showToast('Игрок 2 отвечает только за горизонталь (← →)');
     }
     return;
   }
@@ -441,8 +465,9 @@ function handleLocalMove(direction, controllingPlayerHint = null) {
   updateMoveLabels();
 
   if (movesLimit && movesUsed > movesLimit) {
-    showOverlay('Ходы закончились', 'Попробуйте снова или снизьте сложность.', 'Перезапустить', () => {
-      resetLocal();
+    showOverlay('Ходы закончились', 'Попробуйте снова или снизьте сложность.', {
+      buttonLabel: 'Перезапустить',
+      onClose: () => resetLocal(),
     });
     return;
   }
@@ -456,10 +481,10 @@ function mapKeyToDirection(event) {
   const key = event.key || '';
   const code = event.code || '';
   const k = key.toLowerCase();
-  if (code === 'KeyA' || k === 'a' || key === 'ArrowLeft') return { direction: 'left', player: 1 };
-  if (code === 'KeyD' || k === 'd' || key === 'ArrowRight') return { direction: 'right', player: 1 };
-  if (code === 'KeyW' || k === 'w' || key === 'ArrowUp') return { direction: 'up', player: 2 };
-  if (code === 'KeyS' || k === 's' || key === 'ArrowDown') return { direction: 'down', player: 2 };
+  if (code === 'ArrowLeft' || key === 'ArrowLeft') return { direction: 'left', player: 2 };
+  if (code === 'ArrowRight' || key === 'ArrowRight') return { direction: 'right', player: 2 };
+  if (code === 'KeyW' || k === 'w') return { direction: 'up', player: 1 };
+  if (code === 'KeyS' || k === 's') return { direction: 'down', player: 1 };
   return null;
 }
 
