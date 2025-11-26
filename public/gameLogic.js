@@ -16,7 +16,6 @@ function cloneState(state) {
     height: state.height,
     tiles: state.tiles.map((row) => [...row]),
     goals: state.goals.map((g) => ({ ...g })),
-    boxes: state.boxes.map((b) => ({ ...b })),
     players: {
       1: { ...state.players[1] },
       2: { ...state.players[2] },
@@ -29,62 +28,49 @@ function isWall(state, x, y) {
   return state.tiles[y][x] === TILE_WALL;
 }
 
-function boxAt(state, x, y) {
-  return state.boxes.find((b) => b.x === x && b.y === y);
-}
-
 function isGoal(state, x, y) {
   return state.goals.some((g) => g.x === x && g.y === y);
 }
 
-function applyPlayerMove(state, playerId, direction) {
+function applyPlayerMove(state, controllingPlayer, direction) {
   const dir = DIRS[direction];
   if (!dir) return { state, moved: false, reason: 'invalid' };
+
+  const isHorizontal = direction === 'left' || direction === 'right';
+  const isVertical = direction === 'up' || direction === 'down';
+
+  if (controllingPlayer === 1 && isVertical) {
+    return { state, moved: false, reason: 'axis_blocked' };
+  }
+  if (controllingPlayer === 2 && isHorizontal) {
+    return { state, moved: false, reason: 'axis_blocked' };
+  }
+
   const nextState = cloneState(state);
-  const player = nextState.players[playerId];
-  if (!player) return { state, moved: false, reason: 'invalid_player' };
+  let moved = false;
 
-  const targetX = player.x + dir.dx;
-  const targetY = player.y + dir.dy;
-
-  if (isWall(nextState, targetX, targetY)) {
-    return { state: nextState, moved: false, reason: 'wall' };
-  }
-
-  const boxIndex = nextState.boxes.findIndex((b) => b.x === targetX && b.y === targetY);
-  const box = boxIndex >= 0 ? nextState.boxes[boxIndex] : null;
-
-  if (box) {
-    const isHorizontal = direction === 'left' || direction === 'right';
-    const isVertical = direction === 'up' || direction === 'down';
-    if ((playerId === 1 && isVertical) || (playerId === 2 && isHorizontal)) {
-      return { state: nextState, moved: false, reason: 'axis_blocked' };
+  [1, 2].forEach((pid) => {
+    const p = nextState.players[pid];
+    const targetX = p.x + dir.dx;
+    const targetY = p.y + dir.dy;
+    if (!isWall(nextState, targetX, targetY)) {
+      p.x = targetX;
+      p.y = targetY;
+      moved = true;
     }
+  });
 
-    const beyondX = box.x + dir.dx;
-    const beyondY = box.y + dir.dy;
-    if (isWall(nextState, beyondX, beyondY) || boxAt(nextState, beyondX, beyondY)) {
-      return { state: nextState, moved: false, reason: 'blocked_box' };
-    }
-
-    box.x = beyondX;
-    box.y = beyondY;
-  }
-
-  player.x = targetX;
-  player.y = targetY;
-
-  return { state: nextState, moved: true, movedBoxIndex: box ? boxIndex : null };
+  return { state: nextState, moved, movedPlayers: moved ? [1, 2] : [] };
 }
 
 function isLevelCompleted(state) {
-  return state.boxes.every((box) => isGoal(state, box.x, box.y));
+  const playersOnGoals = [state.players[1], state.players[2]];
+  return state.goals.every((goal) => playersOnGoals.some((p) => p.x === goal.x && p.y === goal.y));
 }
 
 function parseLevel(level, levelIndex = 0) {
   const tiles = [];
   const goals = [];
-  const boxes = level.boxes.map((b) => ({ ...b }));
   const players = {
     1: { ...level.player1 },
     2: { ...level.player2 },
@@ -101,7 +87,6 @@ function parseLevel(level, levelIndex = 0) {
         goals.push({ x, y });
       } else {
         row.push(TILE_EMPTY);
-        if (symbol === 'o') goals.push({ x, y });
       }
     }
     tiles.push(row);
@@ -113,7 +98,6 @@ function parseLevel(level, levelIndex = 0) {
     height: level.height,
     tiles,
     goals,
-    boxes,
     players,
   };
 }

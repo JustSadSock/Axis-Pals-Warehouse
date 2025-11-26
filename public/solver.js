@@ -1,17 +1,13 @@
 import { applyPlayerMove, createInitialState, isLevelCompleted } from './gameLogic.js';
 
-const MAX_STATES = 300000;
+const MAX_STATES = 200000;
 const MAX_DEPTH = 200;
 const DIRECTIONS = ['up', 'down', 'left', 'right'];
 
 function canonicalKey(state) {
   const p1 = state.players[1];
   const p2 = state.players[2];
-  const boxes = [...state.boxes]
-    .map((b) => `${b.x},${b.y}`)
-    .sort()
-    .join('|');
-  return `p1:${p1.x},${p1.y};p2:${p2.x},${p2.y};b:${boxes}`;
+  return `p1:${p1.x},${p1.y};p2:${p2.x},${p2.y}`;
 }
 
 function isLevelSolvable(level) {

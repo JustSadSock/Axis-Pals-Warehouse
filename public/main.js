@@ -19,7 +19,7 @@ let introShown = false;
 let activeFlash = null;
 let endlessLevel = null;
 let endlessStep = 1;
-let endlessDifficulty = { width: 9, height: 7, boxCount: 2, wallDensity: 0.08 };
+let endlessDifficulty = { width: 9, height: 7, goalCount: 2, wallDensity: 0.06 };
 
 const hud = document.getElementById('hud');
 const levelCounter = document.getElementById('level-counter');
@@ -42,8 +42,7 @@ const restartHint = document.getElementById('restart-hint');
 const endlessButton = document.getElementById('endless-play');
 
 const sounds = {
-  step: () => playTone(280, 0.06),
-  push: () => playTone(180, 0.08),
+  step: () => playTone(280, 0.08),
   deny: () => playTone(90, 0.1),
   win: () => playTone(420, 0.35),
 };
@@ -67,8 +66,6 @@ function getColors() {
     floor: styles.getPropertyValue('--floor')?.trim() || '#e8e2d9',
     wall: styles.getPropertyValue('--wall')?.trim() || '#2d2b32',
     goal: styles.getPropertyValue('--goal-ring')?.trim() || '#a4d26b',
-    box: styles.getPropertyValue('--box')?.trim() || '#f5d7b2',
-    boxShadow: styles.getPropertyValue('--box-shadow')?.trim() || '#d0af86',
     robot1: styles.getPropertyValue('--robot1')?.trim() || '#5bc0be',
     robot2: styles.getPropertyValue('--robot2')?.trim() || '#ff7f66',
   };
@@ -137,15 +134,16 @@ function drawBase(state) {
     }
   }
 
-  // goals
   state.goals.forEach((g) => {
     const px = offsetX + g.x * tileSize;
     const py = offsetY + g.y * tileSize;
     ctx.strokeStyle = colors.goal;
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.roundRect(px + 8, py + 8, tileSize - 16, tileSize - 16, 8);
+    ctx.roundRect(px + 8, py + 8, tileSize - 16, tileSize - 16, 10);
     ctx.stroke();
+    ctx.fillStyle = 'rgba(164,210,107,0.12)';
+    ctx.fillRect(px + 10, py + 10, tileSize - 20, tileSize - 20);
   });
 
   return { offsetX, offsetY };
@@ -155,43 +153,14 @@ function interpolate(start, end, t) {
   return start + (end - start) * t;
 }
 
-function drawEntities(state, offset, animProgress = 1) {
+function drawPlayers(state, offset, animProgress = 1) {
   const from = animation?.from;
-  const movingPlayer = animation?.playerId;
-  const movedBoxIndex = animation?.movedBoxIndex;
 
-  const drawBox = (box, idx) => {
-    let x = box.x;
-    let y = box.y;
-    if (animation && idx === movedBoxIndex && from) {
-      const start = from.boxes[idx];
-      x = interpolate(start.x, box.x, animProgress);
-      y = interpolate(start.y, box.y, animProgress);
-    }
-    const px = offset.offsetX + x * tileSize;
-    const py = offset.offsetY + y * tileSize;
-    ctx.fillStyle = colors.box;
-    ctx.strokeStyle = colors.boxShadow;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(px + 6, py + 6, tileSize - 12, tileSize - 12, 6);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,0.08)';
-    ctx.fillRect(px + 6, py + tileSize - 12, tileSize - 12, 8);
-    if (isLevelCompleted(state) && state.goals.some((g) => g.x === Math.round(x) && g.y === Math.round(y))) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(px + 10, py + 10, tileSize - 20, tileSize - 20);
-    }
-  };
-
-  state.boxes.forEach(drawBox);
-
-  const drawBot = (bot, color, arrows, id) => {
+  const drawBot = (id, color, arrows) => {
+    const bot = state.players[id];
     let x = bot.x;
     let y = bot.y;
-    if (animation && movingPlayer === id && from) {
+    if (animation && from) {
       const start = from.players[id];
       x = interpolate(start.x, bot.x, animProgress);
       y = interpolate(start.y, bot.y, animProgress);
@@ -221,7 +190,6 @@ function drawEntities(state, offset, animProgress = 1) {
     ctx.fill();
     ctx.stroke();
 
-    // eyes
     ctx.fillStyle = 'white';
     ctx.beginPath();
     ctx.arc(-8, -4, 4, 0, Math.PI * 2);
@@ -258,8 +226,8 @@ function drawEntities(state, offset, animProgress = 1) {
     ctx.restore();
   };
 
-  drawBot(state.players[1], colors.robot1, ['left', 'right'], 1);
-  drawBot(state.players[2], colors.robot2, ['up', 'down'], 2);
+  drawBot(1, colors.robot1, ['left', 'right']);
+  drawBot(2, colors.robot2, ['up', 'down']);
 
   ctx.restore();
 }
@@ -268,14 +236,14 @@ function renderFrame(timestamp) {
   if (animation) {
     const progress = Math.min((timestamp - animation.start) / animation.duration, 1);
     const offset = drawBase(animation.to);
-    drawEntities(animation.to, offset, progress);
+    drawPlayers(animation.to, offset, progress);
     if (progress >= 1) {
       currentState = animation.to;
       animation = null;
     }
   } else if (currentState) {
     const offset = drawBase(currentState);
-    drawEntities(currentState, offset, 1);
+    drawPlayers(currentState, offset, 1);
   }
   requestAnimationFrame(renderFrame);
 }
@@ -319,14 +287,14 @@ function startLocalGame() {
   floatingControls.classList.remove('hidden');
   restartHint.classList.remove('hidden');
   connectionStatus.textContent = 'Оффлайн режим';
-  modeCaption.textContent = 'Локальная игра: Игрок 1 (WASD), Игрок 2 (стрелки)';
+  modeCaption.textContent = 'Локальная игра: горизонтальный и вертикальный пал движутся вместе';
   currentLevelIndex = 0;
   resetLocal();
   if (!introShown) {
     introShown = true;
     showOverlay(
       'Вместе за клавиатурой',
-      'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — слева (WASD), толкает коробки только влево/вправо.<br>Игрок 2 — справа (стрелки), толкает только вверх/вниз. Решайте вместе.',
+      'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — управляет влево/вправо (WASD или ← →).<br>Игрок 2 — управляет вверх/вниз (стрелки или W/S).<br>Каждая команда двигает оба квадратика. Если одному мешает стена, второй продолжает идти. Совместите оба на цели.',
       'Понятно',
     );
   }
@@ -350,7 +318,7 @@ function generateNextEndlessLevel() {
   const levelDef = generateRandomLevel({
     width: endlessDifficulty.width,
     height: endlessDifficulty.height,
-    boxCount: endlessDifficulty.boxCount,
+    goalCount: endlessDifficulty.goalCount,
     wallDensity: endlessDifficulty.wallDensity,
     attempt,
     label: 'Endless',
@@ -368,7 +336,7 @@ function startEndless() {
   floatingControls.classList.remove('hidden');
   restartHint.classList.remove('hidden');
   endlessStep = 1;
-  endlessDifficulty = { width: 9, height: 7, boxCount: 2, wallDensity: 0.08 };
+  endlessDifficulty = { width: 9, height: 7, goalCount: 2, wallDensity: 0.06 };
   generateNextEndlessLevel();
   resetLocal();
   modeCaption.textContent = 'Бесконечный локальный режим: сложность растёт с каждым этапом';
@@ -378,13 +346,13 @@ function handleLevelCompletion() {
   levelWon = true;
   sounds.win();
   if (mode === 'endless') {
-    showOverlay('Уровень пройден', 'Склад становится сложнее. Готовы к следующей волне?', 'Дальше', () => {
+    showOverlay('Уровень пройден', 'Дальше чуть сложнее. Готовы?', 'Дальше', () => {
       endlessStep += 1;
       endlessDifficulty = {
         width: Math.min(14, endlessDifficulty.width + (endlessStep % 2 === 0 ? 1 : 0)),
         height: Math.min(12, endlessDifficulty.height + (endlessStep % 3 === 0 ? 1 : 0)),
-        boxCount: Math.min(6, endlessDifficulty.boxCount + (endlessStep % 2 === 0 ? 1 : 0)),
-        wallDensity: Math.min(0.2, endlessDifficulty.wallDensity + 0.01),
+        goalCount: 2,
+        wallDensity: Math.min(0.18, endlessDifficulty.wallDensity + 0.01),
       };
       generateNextEndlessLevel();
       resetLocal();
@@ -397,35 +365,32 @@ function handleLevelCompletion() {
   }
 }
 
-function handleLocalMove(direction, controllingPlayer) {
+function handleLocalMove(direction) {
   if (!currentState || animation || levelWon) return;
+  const controllingPlayer = direction === 'left' || direction === 'right' ? 1 : 2;
   const before = currentState;
-  const { state: next, moved, reason, movedBoxIndex } = applyPlayerMove(before, controllingPlayer, direction);
+  const { state: next, moved, reason } = applyPlayerMove(before, controllingPlayer, direction);
 
   if (!moved) {
     shake = 3;
     sounds.deny();
     if (reason === 'axis_blocked') {
-      if (controllingPlayer === 1) showToast('Робот 1 толкает только влево/вправо');
-      if (controllingPlayer === 2) showToast('Робот 2 толкает только вверх/вниз');
+      if (controllingPlayer === 1) showToast('Игрок 1 отвечает только за влево/вправо');
+      if (controllingPlayer === 2) showToast('Игрок 2 отвечает только за вверх/вниз');
     }
     return;
   }
 
-  const playerMovedBox = movedBoxIndex !== null && movedBoxIndex !== undefined;
   animation = {
     from: before,
     to: next,
     playerId: controllingPlayer,
-    movedBoxIndex: playerMovedBox ? movedBoxIndex : null,
     start: performance.now(),
     duration: 140,
   };
 
   activeFlash = { playerId: controllingPlayer, until: performance.now() + 200 };
-
-  const boxMoved = playerMovedBox;
-  boxMoved ? sounds.push() : sounds.step();
+  sounds.step();
 
   if (isLevelCompleted(next)) {
     setTimeout(() => handleLevelCompletion(), 160);
@@ -462,11 +427,7 @@ function setupControls() {
 
     const dir = mapKeyToDirection(e);
     if (!dir) return;
-    const controllingPlayer =
-      ['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code) || ['w', 'a', 's', 'd'].includes(e.key.toLowerCase())
-        ? 1
-        : 2;
-    handleLocalMove(dir, controllingPlayer);
+    handleLocalMove(dir);
     e.preventDefault();
   });
 }
@@ -532,11 +493,11 @@ setHandlers({
   },
   onRoomCreated: ({ roomId, playerId: pid }) => {
     setOnlineStatus(`Комната создана: ${roomId}. Ожидаем второго игрока...`);
-    modeCaption.textContent = `Вы игрок ${pid}. Поделитесь Room ID со вторым палом.`;
+    modeCaption.textContent = `Вы игрок ${pid}. Делитесь Room ID со вторым.`;
   },
   onRoomJoined: ({ roomId, playerId: pid }) => {
     setOnlineStatus(`Подключены к комнате ${roomId} как Игрок ${pid}.`);
-    modeCaption.textContent = `Вы игрок ${pid}. Двигайтесь по очереди.`;
+    modeCaption.textContent = `Вы игрок ${pid}. Подсказки на экране.`;
   },
   onRoomError: ({ message }) => {
     setOnlineStatus(`Ошибка: ${message}`);

@@ -9,18 +9,14 @@ function createEmptyGrid(width, height) {
   for (let y = 0; y < height; y += 1) {
     const row = [];
     for (let x = 0; x < width; x += 1) {
-      if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
-        row.push('#');
-      } else {
-        row.push(' ');
-      }
+      row.push(x === 0 || y === 0 || x === width - 1 || y === height - 1 ? '#' : ' ');
     }
     grid.push(row);
   }
   return grid;
 }
 
-function pickFree(grid, taken) {
+function pickFree(grid, taken = []) {
   const height = grid.length;
   const width = grid[0].length;
   const free = [];
@@ -38,7 +34,7 @@ function pickFree(grid, taken) {
 function placeRandomWalls(grid, density) {
   const height = grid.length;
   const width = grid[0].length;
-  const count = Math.floor((width * height) * density);
+  const count = Math.floor(width * height * density);
   for (let i = 0; i < count; i += 1) {
     const x = randomInt(1, width - 2);
     const y = randomInt(1, height - 2);
@@ -54,7 +50,7 @@ function generateRandomLevel(config = {}) {
   const {
     width = 10,
     height = 8,
-    boxCount = 2,
+    goalCount = 2,
     wallDensity = 0.08,
     attempt = 1,
     label = 'Случайный склад',
@@ -66,27 +62,18 @@ function generateRandomLevel(config = {}) {
     placeRandomWalls(grid, wallDensity);
 
     const goals = [];
-
-    for (let i = 0; i < boxCount; i += 1) {
-      const goal = pickFree(grid, [...goals]);
+    for (let i = 0; i < goalCount; i += 1) {
+      const goal = pickFree(grid, goals);
       if (!goal) break;
       grid[goal.y][goal.x] = '.';
       goals.push(goal);
     }
+    if (goals.length !== goalCount) continue;
 
-    const boxes = [];
-    for (let i = 0; i < boxCount; i += 1) {
-      const pos = pickFree(grid, [...goals, ...boxes]);
-      if (!pos) break;
-      boxes.push(pos);
-    }
+    const player1 = pickFree(grid, goals);
+    const player2 = pickFree(grid, [...goals, player1].filter(Boolean));
 
-    const player1 = pickFree(grid, [...goals, ...boxes]);
-    const player2 = pickFree(grid, [...goals, ...boxes, player1 ? [player1] : []].flat());
-
-    if (!player1 || !player2 || boxes.length !== boxCount || goals.length !== boxCount) {
-      continue;
-    }
+    if (!player1 || !player2) continue;
 
     const level = {
       name: `${label} #${attempt + tries}`,
@@ -95,7 +82,6 @@ function generateRandomLevel(config = {}) {
       map: gridToStrings(grid),
       player1,
       player2,
-      boxes,
     };
 
     const solvable = isLevelSolvable(level);
@@ -104,20 +90,19 @@ function generateRandomLevel(config = {}) {
     }
   }
 
+  const fallbackGrid = createEmptyGrid(width, height);
+  if (width > 2 && height > 2) {
+    fallbackGrid[1][1] = '.';
+    fallbackGrid[height - 2][width - 2] = '.';
+  }
+
   return {
-    name: `${label} (fallback)` ,
+    name: `${label} (fallback)`,
     width,
     height,
-    map: [
-      '#'.repeat(width),
-      '#'.padEnd(width - 1, ' ') + '#',
-      '#'.padEnd(width - 1, ' ') + '#',
-      '#'.padEnd(width - 1, ' ') + '#',
-      '#'.repeat(width),
-    ].slice(0, height),
+    map: gridToStrings(fallbackGrid),
     player1: { x: 1, y: 1 },
     player2: { x: Math.min(width - 2, 2), y: Math.min(height - 2, 2) },
-    boxes: [{ x: Math.min(width - 3, 2), y: Math.min(height - 3, 2) }],
   };
 }
 
