@@ -1,18 +1,25 @@
 import { levels } from './levels.js';
 import { applyPlayerMove, createInitialState, isLevelCompleted } from './gameLogic.js';
 import { setHandlers, createRoom, joinRoom, sendPlayerInput, ensureSocket } from './net.js';
+import { generateRandomLevel } from './levelGenerator.js';
+import { isLevelSolvable } from './solver.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 const tileSize = 48;
 let colors = getColors();
 let mode = 'local';
+let scene = 'menu';
 let currentLevelIndex = 0;
 let currentState = null;
 let animation = null;
 let shake = 0;
 let levelWon = false;
 let introShown = false;
+let activeFlash = null;
+let endlessLevel = null;
+let endlessStep = 1;
+let endlessDifficulty = { width: 9, height: 7, boxCount: 2, wallDensity: 0.08 };
 
 const hud = document.getElementById('hud');
 const levelCounter = document.getElementById('level-counter');
@@ -28,6 +35,11 @@ const overlayText = document.getElementById('overlay-text');
 const overlayButton = document.getElementById('overlay-button');
 const toast = document.getElementById('toast');
 const onlineStatus = document.getElementById('online-status');
+const levelList = document.getElementById('level-list');
+const floatingLevel = document.getElementById('floating-level');
+const floatingControls = document.getElementById('floating-controls');
+const restartHint = document.getElementById('restart-hint');
+const endlessButton = document.getElementById('endless-play');
 
 const sounds = {
   step: () => playTone(280, 0.06),
@@ -62,6 +74,11 @@ function getColors() {
   };
 }
 
+function getActiveLevel() {
+  if (mode === 'endless' && endlessLevel) return endlessLevel;
+  return levels[currentLevelIndex];
+}
+
 function resizeCanvas(state) {
   canvas.width = state.width * tileSize + 32;
   canvas.height = state.height * tileSize + 32;
@@ -80,9 +97,15 @@ function setOnlineStatus(text) {
 }
 
 function updateLevelTitle() {
-  const level = levels[currentLevelIndex];
-  levelTitle.textContent = `${mode === 'local' ? 'Локальный режим' : 'Онлайн режим'} · ${level.name}`;
-  levelCounter.textContent = `Уровень ${currentLevelIndex + 1} / ${levels.length}`;
+  const level = getActiveLevel();
+  const captionPrefix = mode === 'online' ? 'Онлайн режим' : mode === 'endless' ? 'Бесконечный режим' : 'Локальный режим';
+  levelTitle.textContent = `${captionPrefix} · ${level?.name || '—'}`;
+  if (mode === 'endless') {
+    levelCounter.textContent = `Волна ${endlessStep}`;
+  } else {
+    levelCounter.textContent = `Уровень ${currentLevelIndex + 1} / ${levels.length}`;
+  }
+  floatingLevel.textContent = level ? level.name : '';
 }
 
 function drawBase(state) {
@@ -179,6 +202,17 @@ function drawEntities(state, offset, animProgress = 1) {
     ctx.translate(px + tileSize / 2, py + tileSize / 2);
     ctx.shadowColor = 'rgba(0,0,0,0.2)';
     ctx.shadowBlur = 8;
+
+    const flashActive = activeFlash && activeFlash.playerId === id && performance.now() < activeFlash.until;
+    if (flashActive) {
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.arc(0, 0, tileSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
     ctx.fillStyle = color;
     ctx.strokeStyle = 'rgba(0,0,0,0.1)';
     ctx.lineWidth = 3;
@@ -267,17 +301,23 @@ function showOverlay(title, text, buttonLabel = 'Продолжить', onClose 
 
 function resetLocal() {
   levelWon = false;
-  currentState = createInitialState(levels[currentLevelIndex], currentLevelIndex);
+  const level = getActiveLevel();
+  if (!level) return;
+  currentState = createInitialState(level, currentLevelIndex);
+  activeFlash = null;
   resizeCanvas(currentState);
   updateLevelTitle();
 }
 
 function startLocalGame() {
   mode = 'local';
+  scene = 'local';
   startScreen.classList.add('hidden');
   localPanel.classList.remove('hidden');
   onlinePanel.classList.add('hidden');
   hud.classList.remove('hidden');
+  floatingControls.classList.remove('hidden');
+  restartHint.classList.remove('hidden');
   connectionStatus.textContent = 'Оффлайн режим';
   modeCaption.textContent = 'Локальная игра: Игрок 1 (WASD), Игрок 2 (стрелки)';
   currentLevelIndex = 0;
@@ -294,21 +334,67 @@ function startLocalGame() {
 
 function startOnline() {
   mode = 'online';
+  scene = 'online';
   startScreen.classList.add('hidden');
   localPanel.classList.add('hidden');
   onlinePanel.classList.remove('hidden');
   hud.classList.add('hidden');
+  floatingControls.classList.add('hidden');
+  restartHint.classList.add('hidden');
   modeCaption.textContent = 'Онлайн: подключитесь к комнате и двигайтесь по очереди';
   ensureSocket();
+}
+
+function generateNextEndlessLevel() {
+  const attempt = endlessStep;
+  const levelDef = generateRandomLevel({
+    width: endlessDifficulty.width,
+    height: endlessDifficulty.height,
+    boxCount: endlessDifficulty.boxCount,
+    wallDensity: endlessDifficulty.wallDensity,
+    attempt,
+    label: 'Endless',
+  });
+  endlessLevel = levelDef;
+}
+
+function startEndless() {
+  mode = 'endless';
+  scene = 'endless';
+  startScreen.classList.add('hidden');
+  localPanel.classList.remove('hidden');
+  onlinePanel.classList.add('hidden');
+  hud.classList.remove('hidden');
+  floatingControls.classList.remove('hidden');
+  restartHint.classList.remove('hidden');
+  endlessStep = 1;
+  endlessDifficulty = { width: 9, height: 7, boxCount: 2, wallDensity: 0.08 };
+  generateNextEndlessLevel();
+  resetLocal();
+  modeCaption.textContent = 'Бесконечный локальный режим: сложность растёт с каждым этапом';
 }
 
 function handleLevelCompletion() {
   levelWon = true;
   sounds.win();
-  showOverlay('Уровень пройден', 'Отличная координация! Готовы к следующему?', 'Следующий уровень', () => {
-    currentLevelIndex = (currentLevelIndex + 1) % levels.length;
-    resetLocal();
-  });
+  if (mode === 'endless') {
+    showOverlay('Уровень пройден', 'Склад становится сложнее. Готовы к следующей волне?', 'Дальше', () => {
+      endlessStep += 1;
+      endlessDifficulty = {
+        width: Math.min(14, endlessDifficulty.width + (endlessStep % 2 === 0 ? 1 : 0)),
+        height: Math.min(12, endlessDifficulty.height + (endlessStep % 3 === 0 ? 1 : 0)),
+        boxCount: Math.min(6, endlessDifficulty.boxCount + (endlessStep % 2 === 0 ? 1 : 0)),
+        wallDensity: Math.min(0.2, endlessDifficulty.wallDensity + 0.01),
+      };
+      generateNextEndlessLevel();
+      resetLocal();
+    });
+  } else {
+    showOverlay('Уровень пройден', 'Отличная координация! Готовы к следующему?', 'Следующий уровень', () => {
+      currentLevelIndex = (currentLevelIndex + 1) % levels.length;
+      resetLocal();
+    });
+  }
 }
 
 function handleLocalMove(direction, controllingPlayer) {
@@ -336,6 +422,8 @@ function handleLocalMove(direction, controllingPlayer) {
     duration: 140,
   };
 
+  activeFlash = { playerId: controllingPlayer, until: performance.now() + 200 };
+
   const boxMoved = playerMovedBox;
   boxMoved ? sounds.push() : sounds.step();
 
@@ -356,7 +444,7 @@ function mapKeyToDirection(key) {
 function setupControls() {
   document.addEventListener('keydown', (e) => {
     if (e.repeat) return;
-    if (mode !== 'local') {
+    if (mode === 'online') {
       const dirOnline = mapKeyToDirection(e.key);
       if (dirOnline) {
         sendPlayerInput(dirOnline);
@@ -381,6 +469,7 @@ function setupControls() {
 function setupUI() {
   document.getElementById('local-play').addEventListener('click', startLocalGame);
   document.getElementById('online-play').addEventListener('click', startOnline);
+  endlessButton.addEventListener('click', startEndless);
   document.getElementById('restart-level').addEventListener('click', resetLocal);
   document.getElementById('create-room').addEventListener('click', () => {
     setOnlineStatus('Создаём комнату...');
@@ -397,12 +486,38 @@ function setupUI() {
   });
 }
 
+function buildLevelList() {
+  if (!levelList) return;
+  levelList.innerHTML = '';
+  levels.forEach((lvl, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'ghost level-button';
+    btn.textContent = `${idx + 1}. ${lvl.name}`;
+    btn.addEventListener('click', () => {
+      if (scene !== 'local') {
+        startLocalGame();
+      }
+      currentLevelIndex = idx;
+      resetLocal();
+    });
+    levelList.appendChild(btn);
+  });
+}
+
 function applyRemoteState(payload) {
   currentLevelIndex = payload.levelIndex || 0;
   currentState = payload.state;
   levelWon = payload.completed;
   resizeCanvas(currentState);
   updateLevelTitle();
+}
+
+function logSolvability() {
+  levels.forEach((lvl, idx) => {
+    const result = isLevelSolvable(lvl);
+    // eslint-disable-next-line no-console
+    console.info(`Level ${idx + 1} (${lvl.name}): solvable=${result.solvable}${result.minSteps !== undefined ? `, minSteps=${result.minSteps}` : ''}`);
+  });
 }
 
 setHandlers({
@@ -431,8 +546,10 @@ function init() {
   colors = getColors();
   setupControls();
   setupUI();
+  buildLevelList();
   updateLevelTitle();
-  setModeCaption('Выберите режим: локальный — сразу старт, онлайн — через комнату.');
+  setModeCaption('Выберите режим: локальный/бесконечный — сразу старт, онлайн — через комнату.');
+  setTimeout(() => logSolvability(), 10);
   requestAnimationFrame(renderFrame);
 }
 

@@ -16,10 +16,12 @@
         <div class="cta-row">
           <button id="local-play" class="primary large">Играть локально (одна клавиатура)</button>
           <button id="online-play" class="secondary large">Играть онлайн</button>
+          <button id="endless-play" class="ghost large">Бесконечный режим</button>
         </div>
         <div class="controls-note">
           <div>Игрок 1: WASD, толкает ящики по горизонтали.</div>
           <div>Игрок 2: стрелки, толкает ящики по вертикали.</div>
+          <div>Бесконечный режим: каждый новый склад чуть сложнее предыдущего.</div>
         </div>
       </div>
     </div>
@@ -48,6 +50,7 @@
         <div class="controls">
           <button id="restart-level" class="ghost">Перезапуск уровня (R)</button>
         </div>
+        <div class="level-list" id="level-list"></div>
       </section>
 
       <section class="control-panel hidden" id="online-panel">
@@ -72,8 +75,13 @@
       </section>
 
       <section class="game-area">
+        <div class="floating-ui">
+          <div class="pill" id="floating-level">Уровень</div>
+          <div class="pill" id="floating-controls">Игрок 1: WASD · Игрок 2: стрелки</div>
+        </div>
         <canvas id="game-canvas" width="640" height="640"></canvas>
         <div class="caption" id="mode-caption"></div>
+        <div class="restart-hint hidden" id="restart-hint">R — перезапуск уровня</div>
       </section>
     </main>
   </div>

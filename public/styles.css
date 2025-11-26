@@ -118,6 +118,8 @@ button:active { transform: translateY(0); }
   padding: 16px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.04);
 }
+.level-list { margin-top: 12px; display: grid; gap: 8px; }
+.level-button { width: 100%; justify-content: flex-start; text-align: left; display: block; }
 .panel-heading { display: flex; flex-direction: column; gap: 6px; }
 .hint { color: var(--muted); font-size: 14px; }
 .controls { display: flex; gap: 10px; margin-top: 12px; }
@@ -139,6 +141,7 @@ input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 #game-canvas {
@@ -152,6 +155,10 @@ input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(
   margin: 0 auto;
 }
 .caption { margin-top: 8px; color: var(--muted); font-size: 14px; text-align: center; }
+
+.floating-ui { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; flex-wrap: wrap; }
+.pill { background: rgba(255,255,255,0.9); border: 1px solid var(--border); padding: 8px 12px; border-radius: 12px; font-weight: 700; color: var(--muted); box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
+.restart-hint { margin-top: 10px; color: var(--muted); font-size: 13px; text-align: center; }
 
 .overlay {
   position: fixed;
