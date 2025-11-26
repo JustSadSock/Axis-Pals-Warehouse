@@ -64,8 +64,13 @@ function applyPlayerMove(state, controllingPlayer, direction) {
 }
 
 function isLevelCompleted(state) {
-  const playersOnGoals = [state.players[1], state.players[2]];
-  return state.goals.every((goal) => playersOnGoals.some((p) => p.x === goal.x && p.y === goal.y));
+  const goal1 = state.goals.find((g) => g.playerId === 1);
+  const goal2 = state.goals.find((g) => g.playerId === 2);
+  const p1 = state.players[1];
+  const p2 = state.players[2];
+  const p1Ok = goal1 ? p1.x === goal1.x && p1.y === goal1.y : true;
+  const p2Ok = goal2 ? p2.x === goal2.x && p2.y === goal2.y : true;
+  return p1Ok && p2Ok;
 }
 
 function parseLevel(level, levelIndex = 0) {
@@ -82,9 +87,10 @@ function parseLevel(level, levelIndex = 0) {
       const symbol = level.map[y][x];
       if (symbol === '#') {
         row.push(TILE_WALL);
-      } else if (symbol === '.') {
+      } else if (symbol === '.' || symbol === '1' || symbol === '2') {
         row.push(TILE_GOAL);
-        goals.push({ x, y });
+        const playerId = symbol === '1' ? 1 : symbol === '2' ? 2 : null;
+        goals.push({ x, y, playerId });
       } else {
         row.push(TILE_EMPTY);
       }

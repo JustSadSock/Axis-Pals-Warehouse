@@ -61,17 +61,14 @@ function generateRandomLevel(config = {}) {
     const grid = createEmptyGrid(width, height);
     placeRandomWalls(grid, wallDensity);
 
-    const goals = [];
-    for (let i = 0; i < goalCount; i += 1) {
-      const goal = pickFree(grid, goals);
-      if (!goal) break;
-      grid[goal.y][goal.x] = '.';
-      goals.push(goal);
-    }
-    if (goals.length !== goalCount) continue;
+    const goal1 = pickFree(grid);
+    const goal2 = pickFree(grid, goal1 ? [goal1] : []);
+    if (!goal1 || !goal2) continue;
+    grid[goal1.y][goal1.x] = '1';
+    grid[goal2.y][goal2.x] = '2';
 
-    const player1 = pickFree(grid, goals);
-    const player2 = pickFree(grid, [...goals, player1].filter(Boolean));
+    const player1 = pickFree(grid, [goal1, goal2]);
+    const player2 = pickFree(grid, [goal1, goal2, player1].filter(Boolean));
 
     if (!player1 || !player2) continue;
 
@@ -86,14 +83,16 @@ function generateRandomLevel(config = {}) {
 
     const solvable = isLevelSolvable(level);
     if (solvable.solvable) {
+      level.moveLimits = solvable.moveLimits;
+      level.solutions = solvable.solutions;
       return level;
     }
   }
 
   const fallbackGrid = createEmptyGrid(width, height);
   if (width > 2 && height > 2) {
-    fallbackGrid[1][1] = '.';
-    fallbackGrid[height - 2][width - 2] = '.';
+    fallbackGrid[1][1] = '1';
+    fallbackGrid[height - 2][width - 2] = '2';
   }
 
   return {
@@ -103,6 +102,7 @@ function generateRandomLevel(config = {}) {
     map: gridToStrings(fallbackGrid),
     player1: { x: 1, y: 1 },
     player2: { x: Math.min(width - 2, 2), y: Math.min(height - 2, 2) },
+    moveLimits: null,
   };
 }
 

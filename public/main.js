@@ -20,6 +20,10 @@ let activeFlash = null;
 let endlessLevel = null;
 let endlessStep = 1;
 let endlessDifficulty = { width: 9, height: 7, goalCount: 2, wallDensity: 0.06 };
+let difficulty = 'easy';
+let movesUsed = 0;
+let movesLimit = null;
+const levelStatsCache = new Map();
 
 const hud = document.getElementById('hud');
 const levelCounter = document.getElementById('level-counter');
@@ -38,8 +42,11 @@ const onlineStatus = document.getElementById('online-status');
 const levelList = document.getElementById('level-list');
 const floatingLevel = document.getElementById('floating-level');
 const floatingControls = document.getElementById('floating-controls');
+const floatingDifficulty = document.getElementById('floating-difficulty');
 const restartHint = document.getElementById('restart-hint');
 const endlessButton = document.getElementById('endless-play');
+const moveLimitLabel = document.getElementById('move-limit');
+const difficultyChips = document.querySelectorAll('[data-difficulty]');
 
 const sounds = {
   step: () => playTone(280, 0.08),
@@ -105,6 +112,33 @@ function updateLevelTitle() {
   floatingLevel.textContent = level ? level.name : '';
 }
 
+function getLevelStats(level) {
+  if (!level) return null;
+  if (levelStatsCache.has(level.name)) return levelStatsCache.get(level.name);
+  const stats = isLevelSolvable(level);
+  levelStatsCache.set(level.name, stats);
+  return stats;
+}
+
+function updateMoveLabels() {
+  const label = difficulty === 'easy' ? 'Easy (топ-20)' : difficulty === 'medium' ? 'Medium (топ-5)' : 'Hard (топ-2)';
+  const cap = movesLimit ?? '—';
+  moveLimitLabel.textContent = `Лимит ходов · ${label}: ${movesLimit ? `${movesUsed}/${cap}` : '∞'}`;
+  floatingDifficulty.textContent = `${label} — лимит: ${movesLimit ?? '∞'}`;
+  difficultyChips.forEach((chip) => {
+    chip.classList.toggle('active', chip.dataset.difficulty === difficulty);
+  });
+}
+
+function setDifficultyLevel(level) {
+  if (!['easy', 'medium', 'hard'].includes(level)) return;
+  difficulty = level;
+  movesUsed = 0;
+  const stats = getLevelStats(getActiveLevel());
+  movesLimit = stats?.moveLimits ? stats.moveLimits[difficulty] : null;
+  updateMoveLabels();
+}
+
 function drawBase(state) {
   const offsetX = (canvas.width - state.width * tileSize) / 2;
   const offsetY = (canvas.height - state.height * tileSize) / 2;
@@ -137,12 +171,13 @@ function drawBase(state) {
   state.goals.forEach((g) => {
     const px = offsetX + g.x * tileSize;
     const py = offsetY + g.y * tileSize;
-    ctx.strokeStyle = colors.goal;
+    const tint = g.playerId === 1 ? colors.robot1 : g.playerId === 2 ? colors.robot2 : colors.goal;
+    ctx.strokeStyle = tint;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.roundRect(px + 8, py + 8, tileSize - 16, tileSize - 16, 10);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(164,210,107,0.12)';
+    ctx.fillStyle = `${tint}30`;
     ctx.fillRect(px + 10, py + 10, tileSize - 20, tileSize - 20);
   });
 
@@ -273,8 +308,12 @@ function resetLocal() {
   if (!level) return;
   currentState = createInitialState(level, currentLevelIndex);
   activeFlash = null;
+  movesUsed = 0;
+  const stats = getLevelStats(level);
+  movesLimit = stats?.moveLimits ? stats.moveLimits[difficulty] : null;
   resizeCanvas(currentState);
   updateLevelTitle();
+  updateMoveLabels();
 }
 
 function startLocalGame() {
@@ -289,12 +328,13 @@ function startLocalGame() {
   connectionStatus.textContent = 'Оффлайн режим';
   modeCaption.textContent = 'Локальная игра: горизонтальный и вертикальный пал движутся вместе';
   currentLevelIndex = 0;
+  movesUsed = 0;
   resetLocal();
   if (!introShown) {
     introShown = true;
     showOverlay(
       'Вместе за клавиатурой',
-      'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — управляет влево/вправо (WASD или ← →).<br>Игрок 2 — управляет вверх/вниз (стрелки или W/S).<br>Каждая команда двигает оба квадратика. Если одному мешает стена, второй продолжает идти. Совместите оба на цели.',
+      'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — управляет влево/вправо (WASD или ← →).<br>Игрок 2 — управляет вверх/вниз (стрелки или W/S).<br>Каждая команда двигает оба квадратика. Если одному мешает стена, второй продолжает идти. Совместите каждого со своей цветной целью.',
       'Понятно',
     );
   }
@@ -323,6 +363,11 @@ function generateNextEndlessLevel() {
     attempt,
     label: 'Endless',
   });
+  if (!levelDef.moveLimits) {
+    const stats = getLevelStats(levelDef);
+    levelDef.moveLimits = stats?.moveLimits;
+    levelDef.solutions = stats?.solutions;
+  }
   endlessLevel = levelDef;
 }
 
@@ -365,9 +410,9 @@ function handleLevelCompletion() {
   }
 }
 
-function handleLocalMove(direction) {
+function handleLocalMove(direction, controllingPlayerHint = null) {
   if (!currentState || animation || levelWon) return;
-  const controllingPlayer = direction === 'left' || direction === 'right' ? 1 : 2;
+  const controllingPlayer = controllingPlayerHint || (direction === 'left' || direction === 'right' ? 1 : 2);
   const before = currentState;
   const { state: next, moved, reason } = applyPlayerMove(before, controllingPlayer, direction);
 
@@ -392,6 +437,16 @@ function handleLocalMove(direction) {
   activeFlash = { playerId: controllingPlayer, until: performance.now() + 200 };
   sounds.step();
 
+  movesUsed += 1;
+  updateMoveLabels();
+
+  if (movesLimit && movesUsed > movesLimit) {
+    showOverlay('Ходы закончились', 'Попробуйте снова или снизьте сложность.', 'Перезапустить', () => {
+      resetLocal();
+    });
+    return;
+  }
+
   if (isLevelCompleted(next)) {
     setTimeout(() => handleLevelCompletion(), 160);
   }
@@ -401,10 +456,10 @@ function mapKeyToDirection(event) {
   const key = event.key || '';
   const code = event.code || '';
   const k = key.toLowerCase();
-  if (code === 'KeyW' || k === 'w' || key === 'ArrowUp') return 'up';
-  if (code === 'KeyS' || k === 's' || key === 'ArrowDown') return 'down';
-  if (code === 'KeyA' || k === 'a' || key === 'ArrowLeft') return 'left';
-  if (code === 'KeyD' || k === 'd' || key === 'ArrowRight') return 'right';
+  if (code === 'KeyA' || k === 'a' || key === 'ArrowLeft') return { direction: 'left', player: 1 };
+  if (code === 'KeyD' || k === 'd' || key === 'ArrowRight') return { direction: 'right', player: 1 };
+  if (code === 'KeyW' || k === 'w' || key === 'ArrowUp') return { direction: 'up', player: 2 };
+  if (code === 'KeyS' || k === 's' || key === 'ArrowDown') return { direction: 'down', player: 2 };
   return null;
 }
 
@@ -414,7 +469,7 @@ function setupControls() {
     if (mode === 'online') {
       const dirOnline = mapKeyToDirection(e);
       if (dirOnline) {
-        sendPlayerInput(dirOnline);
+        sendPlayerInput(dirOnline.direction);
         e.preventDefault();
       }
       return;
@@ -425,9 +480,10 @@ function setupControls() {
       return;
     }
 
-    const dir = mapKeyToDirection(e);
-    if (!dir) return;
-    handleLocalMove(dir);
+    const mapped = mapKeyToDirection(e);
+    if (!mapped) return;
+    const { direction, player } = mapped;
+    handleLocalMove(direction, player);
     e.preventDefault();
   });
 }
@@ -437,6 +493,12 @@ function setupUI() {
   document.getElementById('online-play').addEventListener('click', startOnline);
   endlessButton.addEventListener('click', startEndless);
   document.getElementById('restart-level').addEventListener('click', resetLocal);
+  difficultyChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      setDifficultyLevel(chip.dataset.difficulty);
+      resetLocal();
+    });
+  });
   document.getElementById('create-room').addEventListener('click', () => {
     setOnlineStatus('Создаём комнату...');
     createRoom();
@@ -480,9 +542,9 @@ function applyRemoteState(payload) {
 
 function logSolvability() {
   levels.forEach((lvl, idx) => {
-    const result = isLevelSolvable(lvl);
+    const result = getLevelStats(lvl);
     // eslint-disable-next-line no-console
-    console.info(`Level ${idx + 1} (${lvl.name}): solvable=${result.solvable}${result.minSteps !== undefined ? `, minSteps=${result.minSteps}` : ''}`);
+    console.info(`Level ${idx + 1} (${lvl.name}): solvable=${result.solvable}${result.minSteps !== undefined ? `, minSteps=${result.minSteps}` : ''}${result.moveLimits ? `, limits=${JSON.stringify(result.moveLimits)}` : ''}`);
   });
 }
 
@@ -514,6 +576,7 @@ function init() {
   setupUI();
   buildLevelList();
   updateLevelTitle();
+  updateMoveLabels();
   setModeCaption('Выберите режим: локальный/бесконечный — сразу старт, онлайн — через комнату.');
   setTimeout(() => logSolvability(), 10);
   requestAnimationFrame(renderFrame);

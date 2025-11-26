@@ -122,7 +122,11 @@ button:active { transform: translateY(0); }
 .level-button { width: 100%; justify-content: flex-start; text-align: left; display: block; }
 .panel-heading { display: flex; flex-direction: column; gap: 6px; }
 .hint { color: var(--muted); font-size: 14px; }
-.controls { display: flex; gap: 10px; margin-top: 12px; }
+.controls { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+.difficulty { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.chip-row { display: flex; gap: 6px; }
+.chip { border: 1px solid var(--border); background: rgba(255, 255, 255, 0.7); padding: 8px 12px; border-radius: 999px; cursor: pointer; transition: all 0.15s ease; }
+.chip.active { border-color: var(--accent); background: rgba(124, 174, 255, 0.15); color: var(--accent-strong); }
 
 .online-actions { display: flex; flex-direction: column; gap: 12px; }
 .card { border: 1px dashed var(--border); border-radius: 12px; padding: 12px; background: #fdfaf6; }

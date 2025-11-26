@@ -12,7 +12,7 @@
       <div class="start-card">
         <p class="eyebrow">кооперативный пазл</p>
         <h1>Axis Pals: Warehouse</h1>
-        <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте обоих на цели.</p>
+        <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
         <div class="cta-row">
           <button id="local-play" class="primary large">Играть локально (одна клавиатура)</button>
           <button id="online-play" class="secondary large">Играть онлайн</button>
@@ -21,6 +21,7 @@
         <div class="controls-note">
           <div>Игрок 1: A / D или стрелки ← → (двигает оба квадратика по горизонтали).</div>
           <div>Игрок 2: W / S или стрелки ↑ ↓ (двигает оба по вертикали).</div>
+          <div>Цели по цветам: каждый должен встать на свой маркер.</div>
           <div>Если одному мешает стена, второй продолжает идти.</div>
         </div>
       </div>
@@ -30,7 +31,7 @@
       <div>
         <p class="eyebrow">кооперативный склад</p>
         <h2 class="hero-title">Axis Pals: Warehouse</h2>
-        <p class="lede">Координируйте оси: горизонтальный и вертикальный пал движутся одновременно, чтобы занять две цели.</p>
+        <p class="lede">Координируйте оси: горизонтальный и вертикальный пал движутся одновременно, чтобы занять свои цветные цели.</p>
       </div>
       <div class="status-pill" id="connection-status">Выберите режим</div>
     </header>
@@ -39,6 +40,7 @@
       <div class="hud-item player1">Игрок 1 (A/D или ← →): ведёт горизонталь</div>
       <div class="hud-item player2">Игрок 2 (W/S или ↑ ↓): ведёт вертикаль</div>
       <div class="hud-item" id="level-counter">Уровень 1 / 5</div>
+      <div class="hud-item" id="move-limit">Лимит ходов: —</div>
     </div>
 
     <main class="layout">
@@ -49,6 +51,14 @@
         </div>
         <div class="controls">
           <button id="restart-level" class="ghost">Перезапуск уровня (R)</button>
+          <div class="difficulty">
+            <span>Сложность хода:</span>
+            <div class="chip-row">
+              <button class="chip active" data-difficulty="easy">Easy (топ-20)</button>
+              <button class="chip" data-difficulty="medium">Medium (топ-5)</button>
+              <button class="chip" data-difficulty="hard">Hard (топ-2)</button>
+            </div>
+          </div>
         </div>
         <div class="level-list" id="level-list"></div>
       </section>
@@ -78,6 +88,7 @@
         <div class="floating-ui">
           <div class="pill" id="floating-level">Уровень</div>
           <div class="pill" id="floating-controls">Игрок 1: A/D или ← → · Игрок 2: W/S или ↑ ↓</div>
+          <div class="pill" id="floating-difficulty">Easy — лимит: —</div>
         </div>
         <canvas id="game-canvas" width="640" height="640"></canvas>
         <div class="caption" id="mode-caption"></div>
