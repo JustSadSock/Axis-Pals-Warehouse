@@ -10,17 +10,43 @@
   <div class="page">
     <div id="start-screen" class="start-screen">
       <div class="start-card">
-        <p class="eyebrow">кооперативный пазл</p>
-        <h1>Axis Pals: Warehouse</h1>
-        <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
-        <div class="cta-row">
-          <button id="local-play" class="primary large">Играть локально (одна клавиатура)</button>
-          <button id="online-play" class="secondary large">Играть онлайн</button>
-          <button id="endless-play" class="ghost large">Бесконечный режим</button>
+        <div class="start-card__header">
+          <div>
+            <p class="eyebrow">кооперативный пазл</p>
+            <h1>Axis Pals: Warehouse</h1>
+            <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
+          </div>
+          <button id="resume-game" class="ghost">Продолжить игру</button>
+        </div>
+        <div class="mode-grid">
+          <div class="mode-card">
+            <div>
+              <p class="eyebrow">кампания</p>
+              <h3>Локально</h3>
+              <p class="hint">Одна клавиатура или экран. Выбирайте уровни и сложность.</p>
+            </div>
+            <button id="local-play" class="primary large">Играть локально</button>
+          </div>
+          <div class="mode-card">
+            <div>
+              <p class="eyebrow">рост сложности</p>
+              <h3>Бесконечно</h3>
+              <p class="hint">Процедурные уровни. Волны становятся шире и плотнее.</p>
+            </div>
+            <button id="endless-play" class="secondary large">Бесконечный режим</button>
+          </div>
+          <div class="mode-card">
+            <div>
+              <p class="eyebrow">дистанционно</p>
+              <h3>Онлайн</h3>
+              <p class="hint">Создайте комнату или подключитесь по ID. Управление сохраняется.</p>
+            </div>
+            <button id="online-play" class="ghost large">Играть онлайн</button>
+          </div>
         </div>
         <div class="controls-note">
-          <div>Игрок 1: W / S (управляет вертикалью для обоих).</div>
-          <div>Игрок 2: ← / → (управляет горизонталью для обоих).</div>
+          <div>Игрок 1: W / S (управляет вертикалью для обоих) или свайп вверх/вниз на телефоне.</div>
+          <div>Игрок 2: ← / → (управляет горизонталью) или свайп/тап на стрелки внизу.</div>
           <div>Цели по цветам: каждый должен встать на свой маркер.</div>
           <div>Если одному мешает стена, второй продолжает идти.</div>
         </div>
@@ -33,7 +59,10 @@
         <h2 class="hero-title">Axis Pals: Warehouse</h2>
         <p class="lede">Координируйте оси: горизонтальный и вертикальный пал движутся одновременно, чтобы занять свои цветные цели.</p>
       </div>
-      <div class="status-pill" id="connection-status">Выберите режим</div>
+      <div class="hero-actions">
+        <div class="status-pill" id="connection-status">Выберите режим</div>
+        <button id="menu-button" class="ghost">Главное меню</button>
+      </div>
     </header>
 
     <div id="hud" class="hud hidden">
@@ -60,7 +89,16 @@
             </div>
           </div>
         </div>
-        <div class="level-list" id="level-list"></div>
+        <div id="campaign-controls">
+          <p class="subheading">Выбор уровня</p>
+          <div class="level-list" id="level-list"></div>
+        </div>
+        <div id="endless-controls" class="hidden">
+          <p class="subheading">Бесконечный прогресс</p>
+          <p class="hint">Вы не выбираете уровни вручную — генератор подбирает новый вызов для каждой волны.</p>
+          <div class="endless-stat" id="endless-progress"></div>
+          <button id="reroll-endless" class="ghost">Сгенерировать заново</button>
+        </div>
       </section>
 
       <section class="control-panel hidden" id="online-panel">
@@ -92,7 +130,17 @@
         </div>
         <canvas id="game-canvas" width="640" height="640"></canvas>
         <div class="caption" id="mode-caption"></div>
-        <div class="restart-hint hidden" id="restart-hint">R — перезапуск уровня</div>
+          <div class="restart-hint hidden" id="restart-hint">R — перезапуск уровня</div>
+        <div class="touch-controls" id="touch-controls">
+          <div class="touch-pad vertical">
+            <button data-direction="up" data-player="1" class="touch-button">▲</button>
+            <button data-direction="down" data-player="1" class="touch-button">▼</button>
+          </div>
+          <div class="touch-pad horizontal">
+            <button data-direction="left" data-player="2" class="touch-button">◀</button>
+            <button data-direction="right" data-player="2" class="touch-button">▶</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
