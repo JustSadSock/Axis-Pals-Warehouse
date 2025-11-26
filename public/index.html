@@ -9,15 +9,14 @@
 <body>
   <div class="page">
     <div id="start-screen" class="start-screen">
-      <div class="start-gradient"></div>
       <div class="start-card">
         <div class="start-top">
           <div class="logo-lockup">
             <div class="logo-mark">AP</div>
             <div>
               <p class="eyebrow">кооперативный пазл</p>
-              <h1>Axis Pals: Warehouse</h1>
-              <p class="lede">Два пал-персонажа двигаются одновременно. Выберите режим и играйте вдвоём с клавишами или свайпами.</p>
+              <h1>Axis Pals</h1>
+              <p class="lede">Два героя двигаются вместе — выберите режим и сразу в игру.</p>
             </div>
           </div>
           <div class="header-actions">
@@ -27,91 +26,53 @@
         </div>
 
         <div class="mode-stack">
-          <div class="mode-card soft">
+          <div class="mode-card">
             <div>
-              <p class="eyebrow">кампания</p>
-              <h3>Локально вдвоём</h3>
-              <p class="hint">Один ведёт горизонталь, второй вертикаль. Уровни и сложность выбираются прямо в игре.</p>
+              <h3>Кампания</h3>
+              <p class="hint">Двое за одним устройством.</p>
             </div>
-            <button id="local-play" class="primary large">Начать кампанию</button>
+            <button id="local-play" class="primary large">Играть</button>
           </div>
-          <div class="mode-card soft">
+          <div class="mode-card">
             <div>
-              <p class="eyebrow">рост сложности</p>
               <h3>Бесконечный забег</h3>
-              <p class="hint">Волны генерируются сами. Играйте без списка уровней — просто жмите старт.</p>
+              <p class="hint">Новые волны без списка уровней.</p>
             </div>
-            <button id="endless-play" class="secondary large">Бесконечный режим</button>
+            <button id="endless-play" class="secondary large">Старт</button>
           </div>
-          <div class="mode-card soft">
+          <div class="mode-card">
             <div>
-              <p class="eyebrow">дистанционно</p>
               <h3>Онлайн</h3>
-              <p class="hint">Создайте комнату или введите Room ID. Управление остаётся тем же.</p>
+              <p class="hint">Комната или код Room ID.</p>
             </div>
-            <button id="online-play" class="ghost large">Играть онлайн</button>
+            <button id="online-play" class="ghost large">Подключиться</button>
           </div>
-        </div>
-
-        <div class="quick-pills">
-          <span class="pill muted">Совместное управление осями</span>
-          <span class="pill muted">Экранные кнопки для телефона</span>
-          <span class="pill muted">Сохраняемые настройки</span>
         </div>
 
         <details class="accordion">
-          <summary>Настройки</summary>
+          <summary>Быстрые настройки</summary>
           <div class="accordion-body settings-list">
             <div class="setting-row">
-              <div>
-                <div class="setting-title">Звуки шагов и побед</div>
-                <p class="hint">Короткие сигналы подтверждают действие.</p>
-              </div>
+              <div class="setting-title">Звук</div>
               <label class="switch">
                 <input id="toggle-sound" type="checkbox" checked>
                 <span class="slider"></span>
               </label>
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-title">Тряска при ошибке</div>
-                <p class="hint">Дрожание подчёркивает заблокированный ход.</p>
-              </div>
+              <div class="setting-title">Тряска</div>
               <label class="switch">
                 <input id="toggle-shake" type="checkbox" checked>
                 <span class="slider"></span>
               </label>
             </div>
             <div class="setting-row">
-              <div>
-                <div class="setting-title">Подсказки</div>
-                <p class="hint">Скрыть плавающие подсказки и обучающие подписи.</p>
-              </div>
+              <div class="setting-title">Подсказки</div>
               <label class="switch">
                 <input id="toggle-hints" type="checkbox" checked>
                 <span class="slider"></span>
               </label>
             </div>
-          </div>
-        </details>
-
-        <details class="accordion">
-          <summary>Управление и советы</summary>
-          <div class="accordion-body info-list">
-            <div>
-              <strong>Управление:</strong> Игрок 1 — W / S или свайп вверх/вниз. Игрок 2 — ← / → или экранные стрелки.
-            </div>
-            <div>Если одному мешает стенка, второй продолжает движение.</div>
-            <div>R — перезапуск уровня. Сложность влияет на лимит ходов.</div>
-          </div>
-        </details>
-
-        <details class="accordion">
-          <summary>Что нового</summary>
-          <div class="accordion-body info-list">
-            <div>— Главное меню стало компактнее и дружелюбнее для телефона.</div>
-            <div>— Режимы вынесены в крупные кнопки, остальное спрятано в панели.</div>
-            <div>— Цвета стали мягче, а панели — чище и легче.</div>
           </div>
         </details>
       </div>
@@ -120,28 +81,20 @@
     <div class="nav-bar">
       <div class="nav-brand">
         <span class="logo-mark mini">AP</span>
-        <div>
-          <div class="eyebrow">Axis Pals</div>
-          <div class="nav-title">Warehouse Edition</div>
-        </div>
+        <div class="nav-title">Warehouse</div>
       </div>
       <div class="nav-actions">
-        <span class="pill muted">Desktop build</span>
-        <span class="pill">Co-op ready</span>
-        <button class="ghost compact" id="menu-button-top">Главное меню</button>
+        <div class="status-pill" id="connection-status">Выберите режим</div>
+        <button class="ghost compact" id="menu-button-top">Меню</button>
       </div>
     </div>
 
     <header class="hero">
       <div>
-        <p class="eyebrow">кооперативный склад</p>
-        <h2 class="hero-title">Axis Pals: Warehouse</h2>
-        <p class="lede">Координируйте оси: горизонтальный и вертикальный пал движутся одновременно, чтобы занять свои цветные цели.</p>
+        <h2 class="hero-title">Совместный склад</h2>
+        <p class="lede">Короткие сессии, понятные режимы и ничего лишнего.</p>
       </div>
-      <div class="hero-actions">
-        <div class="status-pill" id="connection-status">Выберите режим</div>
-        <button id="menu-button" class="ghost">Главное меню</button>
-      </div>
+      <button id="menu-button" class="ghost">Главное меню</button>
     </header>
 
     <div id="hud" class="hud hidden">
@@ -169,40 +122,39 @@
       <section class="control-panel" id="local-panel">
         <div class="panel-heading">
           <h3 id="level-title">Локальный режим</h3>
-          <div class="hint">Один ходит влево/вправо, другой — вверх/вниз. Объекты смещаются вместе.</div>
+          <div class="hint">Два игрока управляют осями.</div>
         </div>
         <div class="controls">
-          <button id="restart-level" class="ghost">Перезапуск уровня (R)</button>
+          <button id="restart-level" class="ghost">Перезапуск (R)</button>
           <div class="difficulty">
-            <span>Сложность хода:</span>
+            <span>Сложность:</span>
             <div class="chip-row">
-              <button class="chip active" data-difficulty="easy">Easy (топ-20)</button>
-              <button class="chip" data-difficulty="medium">Medium (топ-5)</button>
-              <button class="chip" data-difficulty="hard">Hard (топ-2)</button>
+              <button class="chip active" data-difficulty="easy">Easy</button>
+              <button class="chip" data-difficulty="medium">Medium</button>
+              <button class="chip" data-difficulty="hard">Hard</button>
             </div>
           </div>
         </div>
         <div id="campaign-controls">
-          <p class="subheading">Выбор уровня</p>
+          <p class="subheading">Уровни</p>
           <div class="level-list" id="level-list"></div>
         </div>
         <div id="endless-controls" class="hidden">
           <p class="subheading">Бесконечный прогресс</p>
-          <p class="hint">Вы не выбираете уровни вручную — генератор подбирает новый вызов для каждой волны.</p>
           <div class="endless-stat" id="endless-progress"></div>
-          <button id="reroll-endless" class="ghost">Сгенерировать заново</button>
+          <button id="reroll-endless" class="ghost">Обновить волну</button>
         </div>
       </section>
 
       <section class="control-panel hidden" id="online-panel">
         <div class="panel-heading">
-          <h3>Онлайн режим</h3>
-          <p class="hint">Создайте комнату или введите ID. В онлайн-режиме сервер хранит истину, клиенты отправляют только ввод.</p>
+          <h3>Онлайн</h3>
+          <p class="hint">Создайте комнату или введите ID.</p>
         </div>
         <div class="online-actions">
           <div class="card">
             <button id="create-room" class="primary">Создать комнату</button>
-            <div class="small">Вы станете Игроком 1</div>
+            <div class="small">Вы Игрок 1</div>
           </div>
           <div class="card">
             <label for="room-id-input">Room ID</label>
