@@ -432,12 +432,14 @@ function handleLocalMove(direction, controllingPlayer) {
   }
 }
 
-function mapKeyToDirection(key) {
+function mapKeyToDirection(event) {
+  const key = event.key || '';
+  const code = event.code || '';
   const k = key.toLowerCase();
-  if (k === 'w' || key === 'ArrowUp') return 'up';
-  if (k === 's' || key === 'ArrowDown') return 'down';
-  if (k === 'a' || key === 'ArrowLeft') return 'left';
-  if (k === 'd' || key === 'ArrowRight') return 'right';
+  if (code === 'KeyW' || k === 'w' || key === 'ArrowUp') return 'up';
+  if (code === 'KeyS' || k === 's' || key === 'ArrowDown') return 'down';
+  if (code === 'KeyA' || k === 'a' || key === 'ArrowLeft') return 'left';
+  if (code === 'KeyD' || k === 'd' || key === 'ArrowRight') return 'right';
   return null;
 }
 
@@ -445,7 +447,7 @@ function setupControls() {
   document.addEventListener('keydown', (e) => {
     if (e.repeat) return;
     if (mode === 'online') {
-      const dirOnline = mapKeyToDirection(e.key);
+      const dirOnline = mapKeyToDirection(e);
       if (dirOnline) {
         sendPlayerInput(dirOnline);
         e.preventDefault();
@@ -458,9 +460,12 @@ function setupControls() {
       return;
     }
 
-    const dir = mapKeyToDirection(e.key);
+    const dir = mapKeyToDirection(e);
     if (!dir) return;
-    const controllingPlayer = ['w', 'a', 's', 'd'].includes(e.key.toLowerCase()) ? 1 : 2;
+    const controllingPlayer =
+      ['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code) || ['w', 'a', 's', 'd'].includes(e.key.toLowerCase())
+        ? 1
+        : 2;
     handleLocalMove(dir, controllingPlayer);
     e.preventDefault();
   });

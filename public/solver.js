@@ -1,7 +1,7 @@
 import { applyPlayerMove, createInitialState, isLevelCompleted } from './gameLogic.js';
 
-const MAX_STATES = 100000;
-const MAX_DEPTH = 120;
+const MAX_STATES = 300000;
+const MAX_DEPTH = 200;
 const DIRECTIONS = ['up', 'down', 'left', 'right'];
 
 function canonicalKey(state) {
