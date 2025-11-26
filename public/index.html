@@ -9,12 +9,23 @@
 <body>
   <div class="page">
     <div id="start-screen" class="start-screen">
+      <div class="start-gradient"></div>
       <div class="start-card">
-        <div class="start-card__header">
+        <div class="start-head">
           <div>
-            <p class="eyebrow">кооперативный пазл</p>
-            <h1>Axis Pals: Warehouse</h1>
-            <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
+            <div class="logo-lockup">
+              <div class="logo-mark">AP</div>
+              <div>
+                <p class="eyebrow">кооперативный пазл</p>
+                <h1>Axis Pals: Warehouse</h1>
+              </div>
+            </div>
+            <p class="lede">Два квадратика движутся синхронно: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
+            <div class="meta-row">
+              <span class="badge">Steam-like build</span>
+              <span class="badge ghost">v0.9.0 pre-release</span>
+              <span class="badge success">Co-op ready</span>
+            </div>
           </div>
           <div class="header-actions">
             <button id="resume-game" class="ghost">Продолжить игру</button>
@@ -22,77 +33,73 @@
           </div>
         </div>
 
-        <div class="menu-columns">
-          <div class="menu-stack">
-            <div class="menu-group">
-              <div class="menu-title-row">
-                <div>
-                  <p class="eyebrow">режимы</p>
-                  <h3>Выберите способ игры</h3>
-                </div>
-                <div class="menu-helper">Запускается сразу после выбора</div>
+        <div class="start-layout">
+          <div class="start-pane">
+            <div class="hero-pane">
+              <div>
+                <p class="eyebrow">режимы</p>
+                <h3>Выбор режима — как в полноценном клиенте</h3>
+                <p class="hint">Карточки с мини-описанием и мгновенным стартом. Поддержка клавиатуры, геймпада и сенсора.</p>
               </div>
-              <div class="mode-grid">
-                <div class="mode-card">
-                  <div>
-                    <p class="eyebrow">кампания</p>
-                    <h3>Локально</h3>
-                    <p class="hint">Одна клавиатура или экран. Выбирайте уровни и сложность.</p>
-                  </div>
-                  <button id="local-play" class="primary large">Играть локально</button>
+              <ul class="feature-list">
+                <li>Синхронный кооператив: горизонталь + вертикаль.</li>
+                <li>Переключение кампании и бесконечной волны на лету.</li>
+                <li>Экранный HUD, подсказки и настройки с сохранением.</li>
+              </ul>
+            </div>
+
+            <div class="mode-rail">
+              <div class="mode-card">
+                <div>
+                  <p class="eyebrow">кампания</p>
+                  <h3>Локально</h3>
+                  <p class="hint">Одна клавиатура или экран. Выбирайте уровни и сложность.</p>
                 </div>
-                <div class="mode-card">
-                  <div>
-                    <p class="eyebrow">рост сложности</p>
-                    <h3>Бесконечно</h3>
-                    <p class="hint">Процедурные уровни. Волны становятся шире и плотнее.</p>
-                  </div>
-                  <button id="endless-play" class="secondary large">Бесконечный режим</button>
+                <button id="local-play" class="primary large">Играть локально</button>
+              </div>
+              <div class="mode-card">
+                <div>
+                  <p class="eyebrow">рост сложности</p>
+                  <h3>Бесконечно</h3>
+                  <p class="hint">Процедурные уровни. Волны становятся шире и плотнее.</p>
                 </div>
-                <div class="mode-card">
-                  <div>
-                    <p class="eyebrow">дистанционно</p>
-                    <h3>Онлайн</h3>
-                    <p class="hint">Создайте комнату или подключитесь по ID. Управление сохраняется.</p>
-                  </div>
-                  <button id="online-play" class="ghost large">Играть онлайн</button>
+                <button id="endless-play" class="secondary large">Бесконечный режим</button>
+              </div>
+              <div class="mode-card">
+                <div>
+                  <p class="eyebrow">дистанционно</p>
+                  <h3>Онлайн</h3>
+                  <p class="hint">Создайте комнату или подключитесь по ID. Управление сохраняется.</p>
                 </div>
+                <button id="online-play" class="ghost large">Играть онлайн</button>
               </div>
             </div>
 
-            <div class="menu-group">
-              <div class="menu-title-row">
-                <div>
-                  <p class="eyebrow">контекст</p>
-                  <h3>Обучение и справка</h3>
-                </div>
+            <div class="info-grid">
+              <div class="info-card">
+                <h4>Как играть</h4>
+                <p class="hint">Игрок 1: W / S (вертикаль) или свайп вверх/вниз. Игрок 2: ← / → или стрелки внизу. Если одного держит стенка, второй идёт.</p>
               </div>
-              <div class="info-grid">
-                <div class="info-card">
-                  <h4>Как играть</h4>
-                  <p class="hint">Игрок 1: W / S (вертикаль) или свайп вверх/вниз. Игрок 2: ← / → или стрелки внизу. Если одного держит стенка, второй идёт.</p>
-                </div>
-                <div class="info-card">
-                  <h4>Режимы</h4>
-                  <ul>
-                    <li>Кампания — выбирайте уровни.</li>
-                    <li>Бесконечно — волны генерируются.</li>
-                    <li>Онлайн — соединение по Room ID.</li>
-                  </ul>
-                </div>
-                <div class="info-card">
-                  <h4>Советы</h4>
-                  <ul>
-                    <li>Меняйте сложность, чтобы подбирать лимит ходов.</li>
-                    <li>Используйте стрелки на экране на телефоне.</li>
-                    <li>Перезапуск — клавиша R или кнопка в панели.</li>
-                  </ul>
-                </div>
+              <div class="info-card">
+                <h4>Режимы</h4>
+                <ul>
+                  <li>Кампания — выбирайте уровни.</li>
+                  <li>Бесконечно — волны генерируются.</li>
+                  <li>Онлайн — соединение по Room ID.</li>
+                </ul>
+              </div>
+              <div class="info-card">
+                <h4>Советы</h4>
+                <ul>
+                  <li>Меняйте сложность, чтобы подбирать лимит ходов.</li>
+                  <li>Используйте стрелки на экране на телефоне.</li>
+                  <li>Перезапуск — клавиша R или кнопка в панели.</li>
+                </ul>
               </div>
             </div>
           </div>
 
-          <div class="menu-stack">
+          <div class="start-pane start-pane--side">
             <div class="settings-card">
               <div class="menu-title-row">
                 <div>
@@ -142,13 +149,37 @@
                 </div>
               </div>
               <div class="changelog">
-                <div>• Главное меню теперь похоже на полноценную игру: режимы, обучение и настройки в одном месте.</div>
+                <div>• Главное меню напоминает полноценный лаунчер со статусами и режимами.</div>
                 <div>• Слайдер качества ходов показывает, насколько вы близко к лучшему решению.</div>
                 <div>• Настройки сохраняются и работают во всех режимах.</div>
               </div>
             </div>
+            <div class="menu-group ghost-panel">
+              <div class="menu-title-row">
+                <div>
+                  <p class="eyebrow">подсказка</p>
+                  <h3>Играть лучше</h3>
+                </div>
+              </div>
+              <p class="hint">Отрабатывайте первые 5 ходов, пока не попадёте в зону «отлично». Переключайтесь на Medium/Hard, чтобы бросить вызов рекордам.</p>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="nav-bar">
+      <div class="nav-brand">
+        <span class="logo-mark mini">AP</span>
+        <div>
+          <div class="eyebrow">Axis Pals</div>
+          <div class="nav-title">Warehouse Edition</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <span class="pill muted">Desktop build</span>
+        <span class="pill">Co-op ready</span>
+        <button class="ghost compact" id="menu-button-top">Главное меню</button>
       </div>
     </div>
 

@@ -56,6 +56,7 @@ const endlessControls = document.getElementById('endless-controls');
 const endlessProgress = document.getElementById('endless-progress');
 const rerollEndless = document.getElementById('reroll-endless');
 const menuButton = document.getElementById('menu-button');
+const menuButtonTop = document.getElementById('menu-button-top');
 const closeMenuButton = document.getElementById('close-menu');
 const resumeGameButton = document.getElementById('resume-game');
 const touchControls = document.getElementById('touch-controls');
@@ -679,6 +680,7 @@ function setupUI() {
   endlessButton.addEventListener('click', startEndless);
   document.getElementById('restart-level').addEventListener('click', resetLocal);
   if (menuButton) menuButton.addEventListener('click', openMainMenu);
+  if (menuButtonTop) menuButtonTop.addEventListener('click', openMainMenu);
   if (closeMenuButton) {
     closeMenuButton.addEventListener('click', () => {
       if (!hasStartedOnce) {
