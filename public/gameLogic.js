@@ -39,30 +39,32 @@ function isGoal(state, x, y) {
 
 function applyPlayerMove(state, playerId, direction) {
   const dir = DIRS[direction];
-  if (!dir) return { state, moved: false };
+  if (!dir) return { state, moved: false, reason: 'invalid' };
   const nextState = cloneState(state);
   const player = nextState.players[playerId];
-  if (!player) return { state, moved: false };
+  if (!player) return { state, moved: false, reason: 'invalid_player' };
 
   const targetX = player.x + dir.dx;
   const targetY = player.y + dir.dy;
 
   if (isWall(nextState, targetX, targetY)) {
-    return { state: nextState, moved: false };
+    return { state: nextState, moved: false, reason: 'wall' };
   }
 
-  const box = boxAt(nextState, targetX, targetY);
+  const boxIndex = nextState.boxes.findIndex((b) => b.x === targetX && b.y === targetY);
+  const box = boxIndex >= 0 ? nextState.boxes[boxIndex] : null;
+
   if (box) {
     const isHorizontal = direction === 'left' || direction === 'right';
     const isVertical = direction === 'up' || direction === 'down';
     if ((playerId === 1 && isVertical) || (playerId === 2 && isHorizontal)) {
-      return { state: nextState, moved: false };
+      return { state: nextState, moved: false, reason: 'axis_blocked' };
     }
 
     const beyondX = box.x + dir.dx;
     const beyondY = box.y + dir.dy;
     if (isWall(nextState, beyondX, beyondY) || boxAt(nextState, beyondX, beyondY)) {
-      return { state: nextState, moved: false };
+      return { state: nextState, moved: false, reason: 'blocked_box' };
     }
 
     box.x = beyondX;
@@ -72,7 +74,7 @@ function applyPlayerMove(state, playerId, direction) {
   player.x = targetX;
   player.y = targetY;
 
-  return { state: nextState, moved: true };
+  return { state: nextState, moved: true, movedBoxIndex: box ? boxIndex : null };
 }
 
 function isLevelCompleted(state) {

@@ -8,34 +8,52 @@
 </head>
 <body>
   <div class="page">
-    <header class="hero">
-      <div>
+    <div id="start-screen" class="start-screen">
+      <div class="start-card">
         <p class="eyebrow">кооперативный пазл</p>
         <h1>Axis Pals: Warehouse</h1>
-        <p class="lede">Два робота, один склад, только согласованные толчки по нужной оси выведут ящики к целям.</p>
+        <p class="lede">Два робота-товарища двигают паллеты строго по своей оси. Координируйте толчки, чтобы доставить все коробки к подсвеченным зонам.</p>
         <div class="cta-row">
-          <button id="local-play" class="primary">Играть локально</button>
-          <button id="online-play" class="ghost">Играть онлайн</button>
+          <button id="local-play" class="primary large">Играть локально (одна клавиатура)</button>
+          <button id="online-play" class="secondary large">Играть онлайн</button>
+        </div>
+        <div class="controls-note">
+          <div>Игрок 1: WASD, толкает ящики по горизонтали.</div>
+          <div>Игрок 2: стрелки, толкает ящики по вертикали.</div>
         </div>
       </div>
-      <div class="status-pill" id="connection-status">Оффлайн режим</div>
+    </div>
+
+    <header class="hero">
+      <div>
+        <p class="eyebrow">кооперативный склад</p>
+        <h2 class="hero-title">Axis Pals: Warehouse</h2>
+        <p class="lede">Работайте в паре: один робот толкает коробки только влево/вправо, другой — только вверх/вниз.</p>
+      </div>
+      <div class="status-pill" id="connection-status">Выберите режим</div>
     </header>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-item player1">Игрок 1 (WASD): толкает ← →</div>
+      <div class="hud-item player2">Игрок 2 (стрелки): толкает ↑ ↓</div>
+      <div class="hud-item" id="level-counter">Уровень 1 / 5</div>
+    </div>
 
     <main class="layout">
       <section class="control-panel" id="local-panel">
         <div class="panel-heading">
-          <h2 id="level-title">Локальный режим</h2>
+          <h3 id="level-title">Локальный режим</h3>
           <div class="hint">Игрок 1: WASD • Игрок 2: стрелки</div>
         </div>
         <div class="controls">
-          <button id="restart-level" class="ghost">Перезапуск уровня</button>
+          <button id="restart-level" class="ghost">Перезапуск уровня (R)</button>
         </div>
       </section>
 
       <section class="control-panel hidden" id="online-panel">
         <div class="panel-heading">
-          <h2>Онлайн режим</h2>
-          <p class="hint">Создайте комнату или введите ID, чтобы присоединиться. Клиент автоматически подключится к выбранному туннелю/хосту.</p>
+          <h3>Онлайн режим</h3>
+          <p class="hint">Создайте комнату или введите ID. В онлайн-режиме сервер хранит истину, клиенты отправляют только ввод.</p>
         </div>
         <div class="online-actions">
           <div class="card">
@@ -59,6 +77,16 @@
       </section>
     </main>
   </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <h3 id="overlay-title"></h3>
+      <p id="overlay-text"></p>
+      <button id="overlay-button" class="primary">Продолжить</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
 
   <script type="module" src="main.js"></script>
 </body>
