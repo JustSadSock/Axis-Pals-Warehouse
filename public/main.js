@@ -25,6 +25,8 @@ let movesUsed = 0;
 let movesLimit = null;
 const levelStatsCache = new Map();
 let hasStartedOnce = false;
+const defaultSettings = { soundOn: true, screenShake: true, showHints: true };
+let settings = { ...defaultSettings };
 
 const hud = document.getElementById('hud');
 const levelCounter = document.getElementById('level-counter');
@@ -54,8 +56,22 @@ const endlessControls = document.getElementById('endless-controls');
 const endlessProgress = document.getElementById('endless-progress');
 const rerollEndless = document.getElementById('reroll-endless');
 const menuButton = document.getElementById('menu-button');
+const closeMenuButton = document.getElementById('close-menu');
 const resumeGameButton = document.getElementById('resume-game');
 const touchControls = document.getElementById('touch-controls');
+const toggleSound = document.getElementById('toggle-sound');
+const toggleShake = document.getElementById('toggle-shake');
+const toggleHints = document.getElementById('toggle-hints');
+const moveMeter = document.getElementById('move-meter');
+const moveMeterFill = document.getElementById('move-meter-fill');
+const moveRatingLabel = document.getElementById('move-rating-label');
+const moveMeterScale = document.getElementById('move-meter-scale');
+const moveMarkers = {
+  perfect: document.getElementById('mark-perfect'),
+  excellent: document.getElementById('mark-excellent'),
+  good: document.getElementById('mark-good'),
+  normal: document.getElementById('mark-normal'),
+};
 
 const sounds = {
   step: () => playTone(280, 0.08),
@@ -64,7 +80,7 @@ const sounds = {
 };
 
 function playTone(freq, duration) {
-  if (!window.AudioContext) return;
+  if (!window.AudioContext || !settings.soundOn) return;
   const ctxAudio = new AudioContext();
   const osc = ctxAudio.createOscillator();
   const gain = ctxAudio.createGain();
@@ -137,6 +153,7 @@ function updateMoveLabels() {
   difficultyChips.forEach((chip) => {
     chip.classList.toggle('active', chip.dataset.difficulty === difficulty);
   });
+  updateMoveMeter();
 }
 
 function togglePanels() {
@@ -153,10 +170,101 @@ function togglePanels() {
   if (endlessControls) endlessControls.classList.toggle('hidden', !isEndless);
 }
 
+function loadSettings() {
+  try {
+    if (typeof localStorage === 'undefined') return { ...defaultSettings };
+    const raw = localStorage.getItem('axis-pals-settings');
+    if (!raw) return { ...defaultSettings };
+    return { ...defaultSettings, ...JSON.parse(raw) };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('Не удалось загрузить настройки', e);
+    return { ...defaultSettings };
+  }
+}
+
+function saveSettings() {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('axis-pals-settings', JSON.stringify(settings));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function applySettings() {
+  document.body.classList.toggle('hints-off', !settings.showHints);
+  if (toggleSound) toggleSound.checked = settings.soundOn;
+  if (toggleShake) toggleShake.checked = settings.screenShake;
+  if (toggleHints) toggleHints.checked = settings.showHints;
+}
+
 function updateEndlessProgress() {
   if (!endlessProgress) return;
   const densityPercent = Math.round(endlessDifficulty.wallDensity * 100);
   endlessProgress.textContent = `Волна ${endlessStep} · Поле ${endlessDifficulty.width}×${endlessDifficulty.height}, стен до ${densityPercent}%`;
+}
+
+function deriveBenchmarks(stats) {
+  const solutions = stats?.solutions;
+  const limits = stats?.moveLimits;
+  const pickFromSolutions = (rank) => {
+    if (!solutions || !solutions.length) return null;
+    const idx = Math.min(rank, solutions.length - 1);
+    return solutions[idx];
+  };
+  const perfect = pickFromSolutions(0) ?? limits?.hard ?? limits?.medium ?? limits?.easy ?? null;
+  const excellent = pickFromSolutions(4) ?? limits?.medium ?? limits?.hard ?? null;
+  const good = pickFromSolutions(19) ?? limits?.easy ?? limits?.medium ?? null;
+  const normal = pickFromSolutions(49) ?? solutions?.[solutions.length - 1] ?? limits?.easy ?? null;
+  const longest = solutions?.[solutions.length - 1] ?? normal ?? good ?? excellent ?? perfect ?? movesLimit ?? 10;
+  const buffer = Math.max(2, Math.ceil(longest * 0.1));
+  return { perfect, excellent, good, normal, upper: longest + buffer };
+}
+
+function getMoveRating(moves, benchmarks) {
+  const { perfect, excellent, good, normal } = benchmarks;
+  if (perfect && moves <= perfect) return { tier: 'perfect', label: 'Идеально' };
+  if (excellent && moves <= excellent) return { tier: 'excellent', label: 'Отлично' };
+  if (good && moves <= good) return { tier: 'good', label: 'Хорошо' };
+  if (normal && moves <= normal) return { tier: 'normal', label: 'Нормально' };
+  return { tier: 'bad', label: 'Плохо' };
+}
+
+function positionMarkers(benchmarks, maxValue) {
+  Object.entries(moveMarkers).forEach(([key, element]) => {
+    const value = benchmarks[key];
+    if (!element) return;
+    if (!value || !maxValue) {
+      element.classList.add('hidden');
+      return;
+    }
+    const pct = Math.min(100, (value / maxValue) * 100);
+    element.style.left = `${pct}%`;
+    element.classList.remove('hidden');
+  });
+}
+
+function updateMoveMeter() {
+  if (!moveMeterFill || !moveRatingLabel || !moveMeterScale || !moveMeter) return;
+  const stats = getLevelStats(getActiveLevel());
+  const benchmarks = deriveBenchmarks(stats);
+  const maxValue = Math.max(
+    benchmarks.upper ?? 0,
+    movesLimit ?? 0,
+    movesUsed,
+    benchmarks.normal ?? 0,
+    benchmarks.good ?? 0,
+    benchmarks.excellent ?? 0,
+    benchmarks.perfect ?? 0,
+    8,
+  );
+  const rating = getMoveRating(movesUsed, benchmarks);
+  moveMeter.dataset.tier = rating.tier;
+  moveRatingLabel.textContent = rating.label;
+  moveMeterFill.style.width = `${Math.min(100, (movesUsed / maxValue) * 100)}%`;
+  moveMeterScale.textContent = `Идеально ≤ ${benchmarks.perfect ?? '—'} · Отлично ≤ ${benchmarks.excellent ?? '—'} · Хорошо ≤ ${benchmarks.good ?? '—'} · Нормально ≤ ${benchmarks.normal ?? '—'}`;
+  positionMarkers(benchmarks, maxValue);
 }
 
 function openMainMenu() {
@@ -433,7 +541,8 @@ function handleLevelCompletion() {
   sounds.win();
   const stats = getLevelStats(getActiveLevel());
   const limits = stats?.moveLimits || {};
-  const summary = `Вы сделали ${movesUsed} ходов.<br>Лимиты: Easy ≤ ${limits.easy ?? '∞'}, Medium ≤ ${limits.medium ?? '∞'}, Hard ≤ ${limits.hard ?? '∞'}.`;
+  const rating = getMoveRating(movesUsed, deriveBenchmarks(stats));
+  const summary = `Вы сделали ${movesUsed} ходов.<br>Лимиты: Easy ≤ ${limits.easy ?? '∞'}, Medium ≤ ${limits.medium ?? '∞'}, Hard ≤ ${limits.hard ?? '∞'}.<br>Качество: ${rating.label}.`;
   if (mode === 'endless') {
     showOverlay('Уровень пройден', `${summary}<br>Следующая волна будет сложнее.`, {
       buttonLabel: 'Дальше',
@@ -480,7 +589,7 @@ function handleLocalMove(direction, controllingPlayerHint = null) {
   const { state: next, moved, reason } = applyPlayerMove(before, controllingPlayer, direction);
 
   if (!moved) {
-    shake = 3;
+    shake = settings.screenShake ? 3 : 0;
     sounds.deny();
     if (reason === 'axis_blocked') {
       if (controllingPlayer === 1) showToast('Игрок 1 отвечает только за вертикаль (W/S)');
@@ -570,6 +679,15 @@ function setupUI() {
   endlessButton.addEventListener('click', startEndless);
   document.getElementById('restart-level').addEventListener('click', resetLocal);
   if (menuButton) menuButton.addEventListener('click', openMainMenu);
+  if (closeMenuButton) {
+    closeMenuButton.addEventListener('click', () => {
+      if (!hasStartedOnce) {
+        startLocalGame();
+      } else {
+        closeMainMenu();
+      }
+    });
+  }
   if (resumeGameButton) {
     resumeGameButton.addEventListener('click', () => {
       if (!hasStartedOnce) {
@@ -585,6 +703,25 @@ function setupUI() {
       generateNextEndlessLevel();
       resetLocal();
       updateEndlessProgress();
+    });
+  }
+  if (toggleSound) {
+    toggleSound.addEventListener('change', () => {
+      settings.soundOn = toggleSound.checked;
+      saveSettings();
+    });
+  }
+  if (toggleShake) {
+    toggleShake.addEventListener('change', () => {
+      settings.screenShake = toggleShake.checked;
+      saveSettings();
+    });
+  }
+  if (toggleHints) {
+    toggleHints.addEventListener('change', () => {
+      settings.showHints = toggleHints.checked;
+      applySettings();
+      saveSettings();
     });
   }
   difficultyChips.forEach((chip) => {
@@ -666,6 +803,8 @@ setHandlers({
 
 function init() {
   colors = getColors();
+  settings = loadSettings();
+  applySettings();
   setupControls();
   setupTouchControls();
   setupUI();

@@ -16,39 +16,138 @@
             <h1>Axis Pals: Warehouse</h1>
             <p class="lede">Два квадратика двигаются вместе: один игрок задаёт горизонталь, второй — вертикаль. Меняйте взаимное положение и поставьте каждого на его цветную цель.</p>
           </div>
-          <button id="resume-game" class="ghost">Продолжить игру</button>
-        </div>
-        <div class="mode-grid">
-          <div class="mode-card">
-            <div>
-              <p class="eyebrow">кампания</p>
-              <h3>Локально</h3>
-              <p class="hint">Одна клавиатура или экран. Выбирайте уровни и сложность.</p>
-            </div>
-            <button id="local-play" class="primary large">Играть локально</button>
-          </div>
-          <div class="mode-card">
-            <div>
-              <p class="eyebrow">рост сложности</p>
-              <h3>Бесконечно</h3>
-              <p class="hint">Процедурные уровни. Волны становятся шире и плотнее.</p>
-            </div>
-            <button id="endless-play" class="secondary large">Бесконечный режим</button>
-          </div>
-          <div class="mode-card">
-            <div>
-              <p class="eyebrow">дистанционно</p>
-              <h3>Онлайн</h3>
-              <p class="hint">Создайте комнату или подключитесь по ID. Управление сохраняется.</p>
-            </div>
-            <button id="online-play" class="ghost large">Играть онлайн</button>
+          <div class="header-actions">
+            <button id="resume-game" class="ghost">Продолжить игру</button>
+            <button id="close-menu" class="ghost subtle">Закрыть меню</button>
           </div>
         </div>
-        <div class="controls-note">
-          <div>Игрок 1: W / S (управляет вертикалью для обоих) или свайп вверх/вниз на телефоне.</div>
-          <div>Игрок 2: ← / → (управляет горизонталью) или свайп/тап на стрелки внизу.</div>
-          <div>Цели по цветам: каждый должен встать на свой маркер.</div>
-          <div>Если одному мешает стена, второй продолжает идти.</div>
+
+        <div class="menu-columns">
+          <div class="menu-stack">
+            <div class="menu-group">
+              <div class="menu-title-row">
+                <div>
+                  <p class="eyebrow">режимы</p>
+                  <h3>Выберите способ игры</h3>
+                </div>
+                <div class="menu-helper">Запускается сразу после выбора</div>
+              </div>
+              <div class="mode-grid">
+                <div class="mode-card">
+                  <div>
+                    <p class="eyebrow">кампания</p>
+                    <h3>Локально</h3>
+                    <p class="hint">Одна клавиатура или экран. Выбирайте уровни и сложность.</p>
+                  </div>
+                  <button id="local-play" class="primary large">Играть локально</button>
+                </div>
+                <div class="mode-card">
+                  <div>
+                    <p class="eyebrow">рост сложности</p>
+                    <h3>Бесконечно</h3>
+                    <p class="hint">Процедурные уровни. Волны становятся шире и плотнее.</p>
+                  </div>
+                  <button id="endless-play" class="secondary large">Бесконечный режим</button>
+                </div>
+                <div class="mode-card">
+                  <div>
+                    <p class="eyebrow">дистанционно</p>
+                    <h3>Онлайн</h3>
+                    <p class="hint">Создайте комнату или подключитесь по ID. Управление сохраняется.</p>
+                  </div>
+                  <button id="online-play" class="ghost large">Играть онлайн</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="menu-group">
+              <div class="menu-title-row">
+                <div>
+                  <p class="eyebrow">контекст</p>
+                  <h3>Обучение и справка</h3>
+                </div>
+              </div>
+              <div class="info-grid">
+                <div class="info-card">
+                  <h4>Как играть</h4>
+                  <p class="hint">Игрок 1: W / S (вертикаль) или свайп вверх/вниз. Игрок 2: ← / → или стрелки внизу. Если одного держит стенка, второй идёт.</p>
+                </div>
+                <div class="info-card">
+                  <h4>Режимы</h4>
+                  <ul>
+                    <li>Кампания — выбирайте уровни.</li>
+                    <li>Бесконечно — волны генерируются.</li>
+                    <li>Онлайн — соединение по Room ID.</li>
+                  </ul>
+                </div>
+                <div class="info-card">
+                  <h4>Советы</h4>
+                  <ul>
+                    <li>Меняйте сложность, чтобы подбирать лимит ходов.</li>
+                    <li>Используйте стрелки на экране на телефоне.</li>
+                    <li>Перезапуск — клавиша R или кнопка в панели.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-stack">
+            <div class="settings-card">
+              <div class="menu-title-row">
+                <div>
+                  <p class="eyebrow">настройки</p>
+                  <h3>Комфорт и визуал</h3>
+                </div>
+                <div class="menu-helper">Сохраняются для всех режимов</div>
+              </div>
+              <div class="settings-list">
+                <div class="setting-row">
+                  <div>
+                    <div class="setting-title">Звуки шагов и побед</div>
+                    <p class="hint">Короткие звуки подтверждают ход, помогают на телефоне.</p>
+                  </div>
+                  <label class="switch">
+                    <input id="toggle-sound" type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div>
+                    <div class="setting-title">Тряска при ошибке</div>
+                    <p class="hint">Дрожание экрана подчёркивает заблокированный ход.</p>
+                  </div>
+                  <label class="switch">
+                    <input id="toggle-shake" type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div>
+                    <div class="setting-title">Подсказки и UI</div>
+                    <p class="hint">Отключайте всплывающие подсказки и плавающие подписи, если они мешают.</p>
+                  </div>
+                  <label class="switch">
+                    <input id="toggle-hints" type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="menu-group">
+              <div class="menu-title-row">
+                <div>
+                  <p class="eyebrow">обновления</p>
+                  <h3>Последние изменения</h3>
+                </div>
+              </div>
+              <div class="changelog">
+                <div>• Главное меню теперь похоже на полноценную игру: режимы, обучение и настройки в одном месте.</div>
+                <div>• Слайдер качества ходов показывает, насколько вы близко к лучшему решению.</div>
+                <div>• Настройки сохраняются и работают во всех режимах.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -70,6 +169,20 @@
       <div class="hud-item player2">Игрок 2 (← →): ведёт горизонталь</div>
       <div class="hud-item" id="level-counter">Уровень 1 / 5</div>
       <div class="hud-item" id="move-limit">Лимит ходов: —</div>
+      <div class="hud-item move-meter" id="move-meter">
+        <div class="meter-top">
+          <span>Качество ходов</span>
+          <span class="rating-badge" id="move-rating-label">—</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="move-meter-fill"></div>
+          <div class="meter-marker" id="mark-perfect" data-label="топ-1"></div>
+          <div class="meter-marker" id="mark-excellent" data-label="2-5"></div>
+          <div class="meter-marker" id="mark-good" data-label="5-20"></div>
+          <div class="meter-marker" id="mark-normal" data-label="20-50"></div>
+        </div>
+        <div class="meter-scale" id="move-meter-scale">—</div>
+      </div>
     </div>
 
     <main class="layout">
