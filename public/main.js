@@ -20,10 +20,11 @@ let activeFlash = null;
 let endlessLevel = null;
 let endlessStep = 1;
 let endlessDifficulty = { width: 9, height: 7, goalCount: 2, wallDensity: 0.06 };
-let difficulty = 'easy';
 let movesUsed = 0;
-let movesLimit = null;
 const levelStatsCache = new Map();
+let hasStartedOnce = false;
+const defaultSettings = { soundOn: true, screenShake: true, showHints: true };
+let settings = { ...defaultSettings };
 
 const hud = document.getElementById('hud');
 const levelCounter = document.getElementById('level-counter');
@@ -41,13 +42,32 @@ const overlaySecondary = document.getElementById('overlay-secondary');
 const toast = document.getElementById('toast');
 const onlineStatus = document.getElementById('online-status');
 const levelList = document.getElementById('level-list');
-const floatingLevel = document.getElementById('floating-level');
-const floatingControls = document.getElementById('floating-controls');
-const floatingDifficulty = document.getElementById('floating-difficulty');
 const restartHint = document.getElementById('restart-hint');
 const endlessButton = document.getElementById('endless-play');
 const moveLimitLabel = document.getElementById('move-limit');
-const difficultyChips = document.querySelectorAll('[data-difficulty]');
+const campaignControls = document.getElementById('campaign-controls');
+const endlessControls = document.getElementById('endless-controls');
+const endlessProgress = document.getElementById('endless-progress');
+const rerollEndless = document.getElementById('reroll-endless');
+const menuButtonTop = document.getElementById('menu-button-top');
+const closeMenuButton = document.getElementById('close-menu');
+const resumeGameButton = document.getElementById('resume-game');
+const touchControls = document.getElementById('touch-controls');
+const mobileMenuButton = document.getElementById('mobile-menu');
+const mobileRestartButton = document.getElementById('mobile-restart');
+const toggleSound = document.getElementById('toggle-sound');
+const toggleShake = document.getElementById('toggle-shake');
+const toggleHints = document.getElementById('toggle-hints');
+const moveMeter = document.getElementById('move-meter');
+const moveMeterFill = document.getElementById('move-meter-fill');
+const moveRatingLabel = document.getElementById('move-rating-label');
+const moveMeterScale = document.getElementById('move-meter-scale');
+const moveMarkers = {
+  perfect: document.getElementById('mark-perfect'),
+  excellent: document.getElementById('mark-excellent'),
+  good: document.getElementById('mark-good'),
+  normal: document.getElementById('mark-normal'),
+};
 
 const sounds = {
   step: () => playTone(280, 0.08),
@@ -56,7 +76,7 @@ const sounds = {
 };
 
 function playTone(freq, duration) {
-  if (!window.AudioContext) return;
+  if (!window.AudioContext || !settings.soundOn) return;
   const ctxAudio = new AudioContext();
   const osc = ctxAudio.createOscillator();
   const gain = ctxAudio.createGain();
@@ -110,7 +130,6 @@ function updateLevelTitle() {
   } else {
     levelCounter.textContent = `Уровень ${currentLevelIndex + 1} / ${levels.length}`;
   }
-  floatingLevel.textContent = level ? level.name : '';
 }
 
 function getLevelStats(level) {
@@ -122,22 +141,142 @@ function getLevelStats(level) {
 }
 
 function updateMoveLabels() {
-  const label = difficulty === 'easy' ? 'Easy (топ-20)' : difficulty === 'medium' ? 'Medium (топ-5)' : 'Hard (топ-2)';
-  const cap = movesLimit ?? '—';
-  moveLimitLabel.textContent = `Лимит ходов · ${label}: ${movesLimit ? `${movesUsed}/${cap}` : '∞'}`;
-  floatingDifficulty.textContent = `${label} — лимит: ${movesLimit ?? '∞'}`;
-  difficultyChips.forEach((chip) => {
-    chip.classList.toggle('active', chip.dataset.difficulty === difficulty);
+  const stats = getLevelStats(getActiveLevel());
+  const benchmarks = deriveBenchmarks(stats);
+  const remaining = benchmarks.upper ? Math.max(0, benchmarks.upper - movesUsed) : null;
+  moveLimitLabel.textContent = remaining !== null
+    ? `Ходы: ${movesUsed} · Осталось: ${remaining}`
+    : `Ходы: ${movesUsed}`;
+  updateMoveMeter(benchmarks);
+}
+
+function syncDeviceClass() {
+  const isMobile = window.innerWidth <= 900;
+  document.body.classList.toggle('is-mobile', isMobile);
+  if (isMobile) {
+    document.body.classList.add('touch-active');
+  }
+}
+
+function togglePanels() {
+  const isOnline = mode === 'online';
+  const isEndless = mode === 'endless';
+  const isLocalish = mode === 'local' || mode === 'endless';
+  localPanel.classList.toggle('hidden', !isLocalish);
+  onlinePanel.classList.toggle('hidden', !isOnline);
+  hud.classList.toggle('hidden', isOnline);
+  restartHint.classList.toggle('hidden', isOnline);
+  moveLimitLabel.classList.toggle('hidden', isOnline);
+  if (campaignControls) campaignControls.classList.toggle('hidden', isEndless);
+  if (endlessControls) endlessControls.classList.toggle('hidden', !isEndless);
+}
+
+function loadSettings() {
+  try {
+    if (typeof localStorage === 'undefined') return { ...defaultSettings };
+    const raw = localStorage.getItem('axis-pals-settings');
+    if (!raw) return { ...defaultSettings };
+    return { ...defaultSettings, ...JSON.parse(raw) };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('Не удалось загрузить настройки', e);
+    return { ...defaultSettings };
+  }
+}
+
+function saveSettings() {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('axis-pals-settings', JSON.stringify(settings));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function applySettings() {
+  document.body.classList.toggle('hints-off', !settings.showHints);
+  if (toggleSound) toggleSound.checked = settings.soundOn;
+  if (toggleShake) toggleShake.checked = settings.screenShake;
+  if (toggleHints) toggleHints.checked = settings.showHints;
+}
+
+function updateEndlessProgress() {
+  if (!endlessProgress) return;
+  const densityPercent = Math.round(endlessDifficulty.wallDensity * 100);
+  endlessProgress.textContent = `Волна ${endlessStep} · Поле ${endlessDifficulty.width}×${endlessDifficulty.height}, стен до ${densityPercent}%`;
+}
+
+function deriveBenchmarks(stats) {
+  const solutions = stats?.solutions;
+  const limits = stats?.moveLimits;
+  const pickFromSolutions = (rank) => {
+    if (!solutions || !solutions.length) return null;
+    const idx = Math.min(rank, solutions.length - 1);
+    return solutions[idx];
+  };
+  const perfect = pickFromSolutions(0) ?? limits?.hard ?? limits?.medium ?? limits?.easy ?? null;
+  const excellent = pickFromSolutions(4) ?? limits?.medium ?? limits?.hard ?? null;
+  const good = pickFromSolutions(19) ?? limits?.easy ?? limits?.medium ?? null;
+  const normal = pickFromSolutions(49) ?? solutions?.[solutions.length - 1] ?? limits?.easy ?? null;
+  const longest = solutions?.[solutions.length - 1] ?? normal ?? good ?? excellent ?? perfect ?? 10;
+  const buffer = Math.max(2, Math.ceil(longest * 0.1));
+  return { perfect, excellent, good, normal, upper: longest + buffer };
+}
+
+function getMoveRating(moves, benchmarks) {
+  const { perfect, excellent, good, normal } = benchmarks;
+  if (perfect && moves <= perfect) return { tier: 'perfect', label: 'Идеально' };
+  if (excellent && moves <= excellent) return { tier: 'excellent', label: 'Отлично' };
+  if (good && moves <= good) return { tier: 'good', label: 'Хорошо' };
+  if (normal && moves <= normal) return { tier: 'normal', label: 'Нормально' };
+  return { tier: 'bad', label: 'Плохо' };
+}
+
+function positionMarkers(benchmarks, maxValue) {
+  Object.entries(moveMarkers).forEach(([key, element]) => {
+    const value = benchmarks[key];
+    if (!element) return;
+    if (!value || !maxValue) {
+      element.classList.add('hidden');
+      return;
+    }
+    const pct = Math.min(100, (value / maxValue) * 100);
+    element.style.left = `${pct}%`;
+    element.classList.remove('hidden');
   });
 }
 
-function setDifficultyLevel(level) {
-  if (!['easy', 'medium', 'hard'].includes(level)) return;
-  difficulty = level;
-  movesUsed = 0;
-  const stats = getLevelStats(getActiveLevel());
-  movesLimit = stats?.moveLimits ? stats.moveLimits[difficulty] : null;
-  updateMoveLabels();
+function updateMoveMeter(providedBenchmarks = null) {
+  if (!moveMeterFill || !moveRatingLabel || !moveMeterScale || !moveMeter) return;
+  const benchmarks = providedBenchmarks || deriveBenchmarks(getLevelStats(getActiveLevel()));
+  const maxValue = Math.max(
+    benchmarks.upper ?? 0,
+    movesUsed,
+    benchmarks.normal ?? 0,
+    benchmarks.good ?? 0,
+    benchmarks.excellent ?? 0,
+    benchmarks.perfect ?? 0,
+    8,
+  );
+  const total = Math.max(benchmarks.upper ?? maxValue, 1);
+  const remaining = Math.max(0, total - movesUsed);
+  const rating = getMoveRating(movesUsed, benchmarks);
+  moveMeter.dataset.tier = rating.tier;
+  moveRatingLabel.textContent = rating.label;
+  moveMeterFill.style.width = `${Math.min(100, (remaining / total) * 100)}%`;
+  moveMeterScale.textContent = `Идеально ≤ ${benchmarks.perfect ?? '—'} · Отлично ≤ ${benchmarks.excellent ?? '—'} · Хорошо ≤ ${benchmarks.good ?? '—'} · Нормально ≤ ${benchmarks.normal ?? '—'}`;
+  positionMarkers(benchmarks, total);
+}
+
+function openMainMenu() {
+  startScreen.classList.remove('hidden');
+  scene = 'menu';
+}
+
+function closeMainMenu() {
+  startScreen.classList.add('hidden');
+  scene = mode;
+  hasStartedOnce = true;
 }
 
 function drawBase(state) {
@@ -322,8 +461,6 @@ function resetLocal() {
   currentState = createInitialState(level, currentLevelIndex);
   activeFlash = null;
   movesUsed = 0;
-  const stats = getLevelStats(level);
-  movesLimit = stats?.moveLimits ? stats.moveLimits[difficulty] : null;
   resizeCanvas(currentState);
   updateLevelTitle();
   updateMoveLabels();
@@ -332,17 +469,14 @@ function resetLocal() {
 function startLocalGame() {
   mode = 'local';
   scene = 'local';
-  startScreen.classList.add('hidden');
-  localPanel.classList.remove('hidden');
-  onlinePanel.classList.add('hidden');
-  hud.classList.remove('hidden');
-  floatingControls.classList.remove('hidden');
-  restartHint.classList.remove('hidden');
+  closeMainMenu();
+  togglePanels();
   connectionStatus.textContent = 'Оффлайн режим';
   modeCaption.textContent = 'Локальная игра: горизонтальный и вертикальный пал движутся вместе';
   currentLevelIndex = 0;
   movesUsed = 0;
   resetLocal();
+  updateEndlessProgress();
   if (!introShown) {
     introShown = true;
     showOverlay('Вместе за клавиатурой', 'Сядьте вдвоём за клавиатуру.<br>Игрок 1 — только W/S (двигает обоих по вертикали).<br>Игрок 2 — только стрелки ← → (двигает обоих по горизонтали).<br>Каждая команда двигает оба квадратика. Если одному мешает стена, второй продолжает идти. Совместите каждого со своей цветной целью.', {
@@ -354,12 +488,8 @@ function startLocalGame() {
 function startOnline() {
   mode = 'online';
   scene = 'online';
-  startScreen.classList.add('hidden');
-  localPanel.classList.add('hidden');
-  onlinePanel.classList.remove('hidden');
-  hud.classList.add('hidden');
-  floatingControls.classList.add('hidden');
-  restartHint.classList.add('hidden');
+  closeMainMenu();
+  togglePanels();
   modeCaption.textContent = 'Онлайн: подключитесь к комнате и двигайтесь по очереди';
   ensureSocket();
 }
@@ -380,21 +510,19 @@ function generateNextEndlessLevel() {
     levelDef.solutions = stats?.solutions;
   }
   endlessLevel = levelDef;
+  updateEndlessProgress();
 }
 
 function startEndless() {
   mode = 'endless';
   scene = 'endless';
-  startScreen.classList.add('hidden');
-  localPanel.classList.remove('hidden');
-  onlinePanel.classList.add('hidden');
-  hud.classList.remove('hidden');
-  floatingControls.classList.remove('hidden');
-  restartHint.classList.remove('hidden');
+  closeMainMenu();
+  togglePanels();
   endlessStep = 1;
   endlessDifficulty = { width: 9, height: 7, goalCount: 2, wallDensity: 0.06 };
   generateNextEndlessLevel();
   resetLocal();
+  updateEndlessProgress();
   modeCaption.textContent = 'Бесконечный локальный режим: сложность растёт с каждым этапом';
 }
 
@@ -402,8 +530,9 @@ function handleLevelCompletion() {
   levelWon = true;
   sounds.win();
   const stats = getLevelStats(getActiveLevel());
-  const limits = stats?.moveLimits || {};
-  const summary = `Вы сделали ${movesUsed} ходов.<br>Лимиты: Easy ≤ ${limits.easy ?? '∞'}, Medium ≤ ${limits.medium ?? '∞'}, Hard ≤ ${limits.hard ?? '∞'}.`;
+  const benchmarks = deriveBenchmarks(stats);
+  const rating = getMoveRating(movesUsed, benchmarks);
+  const summary = `Вы сделали ${movesUsed} ходов.<br>Отметки: идеально ≤ ${benchmarks.perfect ?? '—'}, отлично ≤ ${benchmarks.excellent ?? '—'}, хорошо ≤ ${benchmarks.good ?? '—'}, нормально ≤ ${benchmarks.normal ?? '—'}.<br>Ваш результат: ${rating.label}.`;
   if (mode === 'endless') {
     showOverlay('Уровень пройден', `${summary}<br>Следующая волна будет сложнее.`, {
       buttonLabel: 'Дальше',
@@ -417,12 +546,13 @@ function handleLevelCompletion() {
         };
         generateNextEndlessLevel();
         resetLocal();
+        updateEndlessProgress();
       },
       secondaryLabel: 'Заново',
       onSecondary: () => resetLocal(),
     });
   } else {
-    showOverlay('Уровень пройден', `${summary}<br>Выберите сложность и попробуйте улучшить результат.`, {
+    showOverlay('Уровень пройден', `${summary}<br>Попробуйте улучшить результат и выйти в идеал.`, {
       buttonLabel: 'Следующий уровень',
       onClose: () => {
         currentLevelIndex = (currentLevelIndex + 1) % levels.length;
@@ -434,6 +564,14 @@ function handleLevelCompletion() {
   }
 }
 
+function handleDirectionalInput(direction, controllingPlayerHint = null) {
+  if (mode === 'online') {
+    sendPlayerInput(direction);
+    return;
+  }
+  handleLocalMove(direction, controllingPlayerHint);
+}
+
 function handleLocalMove(direction, controllingPlayerHint = null) {
   if (!currentState || animation || levelWon) return;
   const controllingPlayer = controllingPlayerHint || (direction === 'left' || direction === 'right' ? 2 : 1);
@@ -441,7 +579,7 @@ function handleLocalMove(direction, controllingPlayerHint = null) {
   const { state: next, moved, reason } = applyPlayerMove(before, controllingPlayer, direction);
 
   if (!moved) {
-    shake = 3;
+    shake = settings.screenShake ? 3 : 0;
     sounds.deny();
     if (reason === 'axis_blocked') {
       if (controllingPlayer === 1) showToast('Игрок 1 отвечает только за вертикаль (W/S)');
@@ -464,14 +602,6 @@ function handleLocalMove(direction, controllingPlayerHint = null) {
   movesUsed += 1;
   updateMoveLabels();
 
-  if (movesLimit && movesUsed > movesLimit) {
-    showOverlay('Ходы закончились', 'Попробуйте снова или снизьте сложность.', {
-      buttonLabel: 'Перезапустить',
-      onClose: () => resetLocal(),
-    });
-    return;
-  }
-
   if (isLevelCompleted(next)) {
     setTimeout(() => handleLevelCompletion(), 160);
   }
@@ -491,16 +621,7 @@ function mapKeyToDirection(event) {
 function setupControls() {
   document.addEventListener('keydown', (e) => {
     if (e.repeat) return;
-    if (mode === 'online') {
-      const dirOnline = mapKeyToDirection(e);
-      if (dirOnline) {
-        sendPlayerInput(dirOnline.direction);
-        e.preventDefault();
-      }
-      return;
-    }
-
-    if (e.key.toLowerCase() === 'r') {
+    if (e.key.toLowerCase() === 'r' && mode !== 'online') {
       resetLocal();
       return;
     }
@@ -508,9 +629,30 @@ function setupControls() {
     const mapped = mapKeyToDirection(e);
     if (!mapped) return;
     const { direction, player } = mapped;
-    handleLocalMove(direction, player);
+    handleDirectionalInput(direction, player);
     e.preventDefault();
   });
+}
+
+function setupTouchControls() {
+  if (!touchControls) return;
+  const buttons = touchControls.querySelectorAll('[data-direction]');
+  buttons.forEach((btn) => {
+    btn.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      const dir = btn.dataset.direction;
+      const playerHint = btn.dataset.player ? Number(btn.dataset.player) : null;
+      handleDirectionalInput(dir, playerHint);
+    });
+  });
+
+  window.addEventListener(
+    'touchstart',
+    () => {
+      document.body.classList.add('touch-active');
+    },
+    { once: true },
+  );
 }
 
 function setupUI() {
@@ -518,12 +660,60 @@ function setupUI() {
   document.getElementById('online-play').addEventListener('click', startOnline);
   endlessButton.addEventListener('click', startEndless);
   document.getElementById('restart-level').addEventListener('click', resetLocal);
-  difficultyChips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      setDifficultyLevel(chip.dataset.difficulty);
-      resetLocal();
+  if (menuButtonTop) menuButtonTop.addEventListener('click', openMainMenu);
+  if (mobileMenuButton) mobileMenuButton.addEventListener('click', openMainMenu);
+  if (closeMenuButton) {
+    closeMenuButton.addEventListener('click', () => {
+      if (!hasStartedOnce) {
+        startLocalGame();
+      } else {
+        closeMainMenu();
+      }
     });
-  });
+  }
+  if (resumeGameButton) {
+    resumeGameButton.addEventListener('click', () => {
+      if (!hasStartedOnce) {
+        startLocalGame();
+      } else {
+        closeMainMenu();
+      }
+    });
+  }
+  if (rerollEndless) {
+    rerollEndless.addEventListener('click', () => {
+      if (mode !== 'endless') startEndless();
+      generateNextEndlessLevel();
+      resetLocal();
+      updateEndlessProgress();
+    });
+  }
+  if (mobileRestartButton) {
+    mobileRestartButton.addEventListener('click', () => {
+      if (mode !== 'online') {
+        resetLocal();
+      }
+    });
+  }
+  if (toggleSound) {
+    toggleSound.addEventListener('change', () => {
+      settings.soundOn = toggleSound.checked;
+      saveSettings();
+    });
+  }
+  if (toggleShake) {
+    toggleShake.addEventListener('change', () => {
+      settings.screenShake = toggleShake.checked;
+      saveSettings();
+    });
+  }
+  if (toggleHints) {
+    toggleHints.addEventListener('change', () => {
+      settings.showHints = toggleHints.checked;
+      applySettings();
+      saveSettings();
+    });
+  }
   document.getElementById('create-room').addEventListener('click', () => {
     setOnlineStatus('Создаём комнату...');
     createRoom();
@@ -597,14 +787,19 @@ setHandlers({
 
 function init() {
   colors = getColors();
+  settings = loadSettings();
+  applySettings();
+  syncDeviceClass();
   setupControls();
+  setupTouchControls();
   setupUI();
   buildLevelList();
   updateLevelTitle();
   updateMoveLabels();
-  setModeCaption('Выберите режим: локальный/бесконечный — сразу старт, онлайн — через комнату.');
+  setModeCaption('Выберите режим: локальный/бесконечный — сразу старт, онлайн — через комнату. На телефоне доступны стрелки на экране.');
   setTimeout(() => logSolvability(), 10);
   requestAnimationFrame(renderFrame);
+  window.addEventListener('resize', syncDeviceClass);
 }
 
 init();
