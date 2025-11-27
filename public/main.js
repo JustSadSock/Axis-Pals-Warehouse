@@ -20,9 +20,7 @@ let activeFlash = null;
 let endlessLevel = null;
 let endlessStep = 1;
 let endlessDifficulty = { width: 9, height: 7, goalCount: 2, wallDensity: 0.06 };
-let difficulty = 'easy';
 let movesUsed = 0;
-let movesLimit = null;
 const levelStatsCache = new Map();
 let hasStartedOnce = false;
 const defaultSettings = { soundOn: true, screenShake: true, showHints: true };
@@ -46,11 +44,9 @@ const onlineStatus = document.getElementById('online-status');
 const levelList = document.getElementById('level-list');
 const floatingLevel = document.getElementById('floating-level');
 const floatingControls = document.getElementById('floating-controls');
-const floatingDifficulty = document.getElementById('floating-difficulty');
 const restartHint = document.getElementById('restart-hint');
 const endlessButton = document.getElementById('endless-play');
 const moveLimitLabel = document.getElementById('move-limit');
-const difficultyChips = document.querySelectorAll('[data-difficulty]');
 const campaignControls = document.getElementById('campaign-controls');
 const endlessControls = document.getElementById('endless-controls');
 const endlessProgress = document.getElementById('endless-progress');
@@ -149,14 +145,13 @@ function getLevelStats(level) {
 }
 
 function updateMoveLabels() {
-  const label = difficulty === 'easy' ? 'Easy (топ-20)' : difficulty === 'medium' ? 'Medium (топ-5)' : 'Hard (топ-2)';
-  const cap = movesLimit ?? '—';
-  moveLimitLabel.textContent = `Лимит ходов · ${label}: ${movesLimit ? `${movesUsed}/${cap}` : '∞'}`;
-  floatingDifficulty.textContent = `${label} — лимит: ${movesLimit ?? '∞'}`;
-  difficultyChips.forEach((chip) => {
-    chip.classList.toggle('active', chip.dataset.difficulty === difficulty);
-  });
-  updateMoveMeter();
+  const stats = getLevelStats(getActiveLevel());
+  const benchmarks = deriveBenchmarks(stats);
+  const remaining = benchmarks.upper ? Math.max(0, benchmarks.upper - movesUsed) : null;
+  moveLimitLabel.textContent = remaining !== null
+    ? `Ходы: ${movesUsed} · Осталось: ${remaining}`
+    : `Ходы: ${movesUsed}`;
+  updateMoveMeter(benchmarks);
 }
 
 function syncDeviceClass() {
@@ -228,7 +223,7 @@ function deriveBenchmarks(stats) {
   const excellent = pickFromSolutions(4) ?? limits?.medium ?? limits?.hard ?? null;
   const good = pickFromSolutions(19) ?? limits?.easy ?? limits?.medium ?? null;
   const normal = pickFromSolutions(49) ?? solutions?.[solutions.length - 1] ?? limits?.easy ?? null;
-  const longest = solutions?.[solutions.length - 1] ?? normal ?? good ?? excellent ?? perfect ?? movesLimit ?? 10;
+  const longest = solutions?.[solutions.length - 1] ?? normal ?? good ?? excellent ?? perfect ?? 10;
   const buffer = Math.max(2, Math.ceil(longest * 0.1));
   return { perfect, excellent, good, normal, upper: longest + buffer };
 }
@@ -256,13 +251,11 @@ function positionMarkers(benchmarks, maxValue) {
   });
 }
 
-function updateMoveMeter() {
+function updateMoveMeter(providedBenchmarks = null) {
   if (!moveMeterFill || !moveRatingLabel || !moveMeterScale || !moveMeter) return;
-  const stats = getLevelStats(getActiveLevel());
-  const benchmarks = deriveBenchmarks(stats);
+  const benchmarks = providedBenchmarks || deriveBenchmarks(getLevelStats(getActiveLevel()));
   const maxValue = Math.max(
     benchmarks.upper ?? 0,
-    movesLimit ?? 0,
     movesUsed,
     benchmarks.normal ?? 0,
     benchmarks.good ?? 0,
@@ -270,12 +263,14 @@ function updateMoveMeter() {
     benchmarks.perfect ?? 0,
     8,
   );
+  const total = Math.max(benchmarks.upper ?? maxValue, 1);
+  const remaining = Math.max(0, total - movesUsed);
   const rating = getMoveRating(movesUsed, benchmarks);
   moveMeter.dataset.tier = rating.tier;
   moveRatingLabel.textContent = rating.label;
-  moveMeterFill.style.width = `${Math.min(100, (movesUsed / maxValue) * 100)}%`;
+  moveMeterFill.style.width = `${Math.min(100, (remaining / total) * 100)}%`;
   moveMeterScale.textContent = `Идеально ≤ ${benchmarks.perfect ?? '—'} · Отлично ≤ ${benchmarks.excellent ?? '—'} · Хорошо ≤ ${benchmarks.good ?? '—'} · Нормально ≤ ${benchmarks.normal ?? '—'}`;
-  positionMarkers(benchmarks, maxValue);
+  positionMarkers(benchmarks, total);
 }
 
 function openMainMenu() {
@@ -287,15 +282,6 @@ function closeMainMenu() {
   startScreen.classList.add('hidden');
   scene = mode;
   hasStartedOnce = true;
-}
-
-function setDifficultyLevel(level) {
-  if (!['easy', 'medium', 'hard'].includes(level)) return;
-  difficulty = level;
-  movesUsed = 0;
-  const stats = getLevelStats(getActiveLevel());
-  movesLimit = stats?.moveLimits ? stats.moveLimits[difficulty] : null;
-  updateMoveLabels();
 }
 
 function drawBase(state) {
@@ -480,8 +466,6 @@ function resetLocal() {
   currentState = createInitialState(level, currentLevelIndex);
   activeFlash = null;
   movesUsed = 0;
-  const stats = getLevelStats(level);
-  movesLimit = stats?.moveLimits ? stats.moveLimits[difficulty] : null;
   resizeCanvas(currentState);
   updateLevelTitle();
   updateMoveLabels();
@@ -551,9 +535,9 @@ function handleLevelCompletion() {
   levelWon = true;
   sounds.win();
   const stats = getLevelStats(getActiveLevel());
-  const limits = stats?.moveLimits || {};
-  const rating = getMoveRating(movesUsed, deriveBenchmarks(stats));
-  const summary = `Вы сделали ${movesUsed} ходов.<br>Лимиты: Easy ≤ ${limits.easy ?? '∞'}, Medium ≤ ${limits.medium ?? '∞'}, Hard ≤ ${limits.hard ?? '∞'}.<br>Качество: ${rating.label}.`;
+  const benchmarks = deriveBenchmarks(stats);
+  const rating = getMoveRating(movesUsed, benchmarks);
+  const summary = `Вы сделали ${movesUsed} ходов.<br>Отметки: идеально ≤ ${benchmarks.perfect ?? '—'}, отлично ≤ ${benchmarks.excellent ?? '—'}, хорошо ≤ ${benchmarks.good ?? '—'}, нормально ≤ ${benchmarks.normal ?? '—'}.<br>Ваш результат: ${rating.label}.`;
   if (mode === 'endless') {
     showOverlay('Уровень пройден', `${summary}<br>Следующая волна будет сложнее.`, {
       buttonLabel: 'Дальше',
@@ -573,7 +557,7 @@ function handleLevelCompletion() {
       onSecondary: () => resetLocal(),
     });
   } else {
-    showOverlay('Уровень пройден', `${summary}<br>Выберите сложность и попробуйте улучшить результат.`, {
+    showOverlay('Уровень пройден', `${summary}<br>Попробуйте улучшить результат и выйти в идеал.`, {
       buttonLabel: 'Следующий уровень',
       onClose: () => {
         currentLevelIndex = (currentLevelIndex + 1) % levels.length;
@@ -622,14 +606,6 @@ function handleLocalMove(direction, controllingPlayerHint = null) {
 
   movesUsed += 1;
   updateMoveLabels();
-
-  if (movesLimit && movesUsed > movesLimit) {
-    showOverlay('Ходы закончились', 'Попробуйте снова или снизьте сложность.', {
-      buttonLabel: 'Перезапустить',
-      onClose: () => resetLocal(),
-    });
-    return;
-  }
 
   if (isLevelCompleted(next)) {
     setTimeout(() => handleLevelCompletion(), 160);
@@ -744,12 +720,6 @@ function setupUI() {
       saveSettings();
     });
   }
-  difficultyChips.forEach((chip) => {
-    chip.addEventListener('click', () => {
-      setDifficultyLevel(chip.dataset.difficulty);
-      resetLocal();
-    });
-  });
   document.getElementById('create-room').addEventListener('click', () => {
     setOnlineStatus('Создаём комнату...');
     createRoom();

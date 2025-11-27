@@ -101,7 +101,7 @@
       <div class="hud-item player1">Игрок 1 (W/S): ведёт вертикаль</div>
       <div class="hud-item player2">Игрок 2 (← →): ведёт горизонталь</div>
       <div class="hud-item" id="level-counter">Уровень 1 / 5</div>
-      <div class="hud-item" id="move-limit">Лимит ходов: —</div>
+      <div class="hud-item" id="move-limit">Ходы: —</div>
       <div class="hud-item move-meter" id="move-meter">
         <div class="meter-top">
           <span>Качество ходов</span>
@@ -126,14 +126,6 @@
         </div>
         <div class="controls">
           <button id="restart-level" class="ghost">Перезапуск (R)</button>
-          <div class="difficulty">
-            <span>Сложность:</span>
-            <div class="chip-row">
-              <button class="chip active" data-difficulty="easy">Easy</button>
-              <button class="chip" data-difficulty="medium">Medium</button>
-              <button class="chip" data-difficulty="hard">Hard</button>
-            </div>
-          </div>
         </div>
         <div id="campaign-controls">
           <p class="subheading">Уровни</p>
@@ -171,7 +163,6 @@
         <div class="floating-ui">
           <div class="pill" id="floating-level">Уровень</div>
           <div class="pill" id="floating-controls">Игрок 1: W/S · Игрок 2: ← →</div>
-          <div class="pill" id="floating-difficulty">Easy — лимит: —</div>
         </div>
         <canvas id="game-canvas" width="640" height="640"></canvas>
         <div class="caption" id="mode-caption"></div>
