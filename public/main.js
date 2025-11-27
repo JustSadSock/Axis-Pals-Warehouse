@@ -42,8 +42,6 @@ const overlaySecondary = document.getElementById('overlay-secondary');
 const toast = document.getElementById('toast');
 const onlineStatus = document.getElementById('online-status');
 const levelList = document.getElementById('level-list');
-const floatingLevel = document.getElementById('floating-level');
-const floatingControls = document.getElementById('floating-controls');
 const restartHint = document.getElementById('restart-hint');
 const endlessButton = document.getElementById('endless-play');
 const moveLimitLabel = document.getElementById('move-limit');
@@ -51,7 +49,6 @@ const campaignControls = document.getElementById('campaign-controls');
 const endlessControls = document.getElementById('endless-controls');
 const endlessProgress = document.getElementById('endless-progress');
 const rerollEndless = document.getElementById('reroll-endless');
-const menuButton = document.getElementById('menu-button');
 const menuButtonTop = document.getElementById('menu-button-top');
 const closeMenuButton = document.getElementById('close-menu');
 const resumeGameButton = document.getElementById('resume-game');
@@ -133,7 +130,6 @@ function updateLevelTitle() {
   } else {
     levelCounter.textContent = `Уровень ${currentLevelIndex + 1} / ${levels.length}`;
   }
-  floatingLevel.textContent = level ? level.name : '';
 }
 
 function getLevelStats(level) {
@@ -169,7 +165,6 @@ function togglePanels() {
   localPanel.classList.toggle('hidden', !isLocalish);
   onlinePanel.classList.toggle('hidden', !isOnline);
   hud.classList.toggle('hidden', isOnline);
-  floatingControls.classList.toggle('hidden', isOnline);
   restartHint.classList.toggle('hidden', isOnline);
   moveLimitLabel.classList.toggle('hidden', isOnline);
   if (campaignControls) campaignControls.classList.toggle('hidden', isEndless);
@@ -665,7 +660,6 @@ function setupUI() {
   document.getElementById('online-play').addEventListener('click', startOnline);
   endlessButton.addEventListener('click', startEndless);
   document.getElementById('restart-level').addEventListener('click', resetLocal);
-  if (menuButton) menuButton.addEventListener('click', openMainMenu);
   if (menuButtonTop) menuButtonTop.addEventListener('click', openMainMenu);
   if (mobileMenuButton) mobileMenuButton.addEventListener('click', openMainMenu);
   if (closeMenuButton) {
