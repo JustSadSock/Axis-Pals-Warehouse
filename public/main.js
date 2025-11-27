@@ -5,6 +5,7 @@ import { generateRandomLevel } from './levelGenerator.js';
 import { isLevelSolvable } from './solver.js';
 
 const canvas = document.getElementById('game-canvas');
+const canvasFrame = document.getElementById('canvas-frame');
 const ctx = canvas.getContext('2d');
 const tileSize = 48;
 let colors = getColors();
@@ -112,6 +113,7 @@ function getActiveLevel() {
 function resizeCanvas(state) {
   canvas.width = state.width * tileSize + 32;
   canvas.height = state.height * tileSize + 32;
+  fitCanvasToViewport();
 }
 
 function setModeCaption(text) {
@@ -136,6 +138,19 @@ function updateLevelTitle() {
     levelCounter.textContent = `Уровень ${currentLevelIndex + 1} / ${levels.length}`;
   }
   floatingLevel.textContent = level ? level.name : '';
+}
+
+function fitCanvasToViewport() {
+  if (!canvasFrame) return;
+  const controlsHeight = touchControls && !touchControls.classList.contains('hidden') ? touchControls.offsetHeight + 12 : 0;
+  const hudHeight = hud && !hud.classList.contains('hidden') ? hud.offsetHeight : 0;
+  const topAllowance = (document.querySelector('.nav-bar')?.offsetHeight || 0) + (document.querySelector('.hero')?.offsetHeight || 0);
+  const availableWidth = Math.min(window.innerWidth - 24, 1160);
+  const availableHeight = window.innerHeight - topAllowance - hudHeight - controlsHeight - 32;
+  const heightForScale = Math.max(140, availableHeight);
+  const scale = Math.min(1, availableWidth / canvas.width, heightForScale / canvas.height);
+  canvasFrame.style.setProperty('--canvas-scale', scale.toString());
+  canvasFrame.style.height = `${canvas.height * scale}px`;
 }
 
 function getLevelStats(level) {
@@ -169,6 +184,7 @@ function togglePanels() {
   moveLimitLabel.classList.toggle('hidden', isOnline);
   if (campaignControls) campaignControls.classList.toggle('hidden', isEndless);
   if (endlessControls) endlessControls.classList.toggle('hidden', !isEndless);
+  fitCanvasToViewport();
 }
 
 function loadSettings() {
@@ -669,6 +685,7 @@ function setupTouchControls() {
     'touchstart',
     () => {
       document.body.classList.add('touch-active');
+      fitCanvasToViewport();
     },
     { once: true },
   );
@@ -816,6 +833,9 @@ function init() {
   setModeCaption('Выберите режим: локальный/бесконечный — сразу старт, онлайн — через комнату. На телефоне доступны стрелки на экране.');
   setTimeout(() => logSolvability(), 10);
   requestAnimationFrame(renderFrame);
+  fitCanvasToViewport();
+  window.addEventListener('resize', fitCanvasToViewport);
+  window.addEventListener('orientationchange', fitCanvasToViewport);
 }
 
 init();

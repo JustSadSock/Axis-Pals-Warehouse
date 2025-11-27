@@ -27,13 +27,20 @@ body {
   background: var(--bg-color);
   color: var(--text);
   min-height: 100vh;
+  touch-action: manipulation;
+  overscroll-behavior: contain;
+  overflow: hidden;
 }
 
 .page {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 24px 16px 88px;
+  padding: 18px 12px 72px;
   position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .hidden { display: none !important; }
@@ -195,7 +202,7 @@ button.compact { padding: 10px 12px; font-size: 14px; }
 
 .meter-scale { color: var(--muted); font-size: 12px; line-height: 1.4; }
 
-.layout { display: grid; grid-template-columns: 340px 1fr; gap: 16px; margin-top: 12px; align-items: start; }
+.layout { display: grid; grid-template-columns: 340px 1fr; gap: 16px; margin-top: 12px; align-items: start; flex: 1; min-height: 0; }
 .control-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 8px 18px rgba(46,35,18,0.1); }
 .level-list { margin-top: 12px; display: grid; gap: 8px; }
 .level-button { width: 100%; justify-content: flex-start; text-align: left; display: block; }
@@ -218,13 +225,14 @@ input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(
 
 .game-area { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 10px 20px rgba(46,35,18,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
-#game-canvas { width: 100%; max-width: 720px; height: auto; border-radius: 12px; background: var(--floor); border: 1px solid var(--border); display: block; margin: 0 auto; }
+.canvas-frame { position: relative; margin: 0 auto; width: fit-content; transform-origin: top center; --canvas-scale: 1; transform: scale(var(--canvas-scale)); height: auto; }
+#game-canvas { width: 100%; max-width: 720px; height: auto; border-radius: 12px; background: var(--floor); border: 1px solid var(--border); display: block; touch-action: none; }
 .caption { margin-top: 8px; color: var(--muted); font-size: 14px; text-align: center; }
 
 .floating-ui { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; flex-wrap: wrap; }
 .restart-hint { margin-top: 10px; color: var(--muted); font-size: 13px; text-align: center; }
 
-.touch-controls { display: none; width: 100%; margin-top: 12px; justify-content: space-between; gap: 10px; }
+.touch-controls { display: none; width: 100%; margin-top: 12px; justify-content: space-between; gap: 10px; position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 12; }
 .touch-active .touch-controls { display: flex; }
 .touch-pad { display: grid; gap: 6px; flex: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .touch-pad.vertical { grid-template-columns: 1fr; max-width: 160px; }
@@ -246,11 +254,14 @@ body.hints-off .floating-ui .pill { display: none; }
 body.hints-off .hud-item { opacity: 0.92; }
 
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: 1fr; display: flex; flex-direction: column; gap: 10px; }
+  .game-area { order: -1; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 0; flex: 1; }
   .hero { flex-direction: column; align-items: flex-start; }
   #game-canvas { max-width: 100%; }
-  .page { padding: 16px 12px 64px; }
+  .page { padding: 12px 10px 80px; }
   .touch-controls { display: flex; }
+  .control-panel { max-height: 260px; overflow: auto; }
+  .level-list { max-height: 180px; overflow: auto; }
   .start-top { flex-direction: column; align-items: flex-start; }
   .nav-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
@@ -260,4 +271,13 @@ body.hints-off .hud-item { opacity: 0.92; }
   .hud-item { width: 100%; }
   .start-card { padding: 18px; }
   .mode-card { min-height: auto; }
+  .page { gap: 8px; }
+  .floating-ui { position: static; justify-content: center; }
+  .floating-ui .pill { flex: 1; text-align: center; }
+}
+
+@media (orientation: portrait) {
+  .layout { display: flex; flex-direction: column; }
+  .hud { flex-direction: column; }
+  .canvas-frame { max-width: calc(100vw - 24px); }
 }
